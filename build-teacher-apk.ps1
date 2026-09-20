@@ -75,14 +75,20 @@ Write-Host "  TEACHER APK BUILD SUCCESSFUL!" -ForegroundColor Green
 Write-Host "  Output APK: $outputApk ($apkSizeMB MB)" -ForegroundColor Green
 Write-Host "========================================================================" -ForegroundColor Green
 
+# Copy to public/apk for live web download
+if (-not (Test-Path "$baseDir\public\apk")) { New-Item -ItemType Directory -Path "$baseDir\public\apk" | Out-Null }
+Copy-Item $outputApk "$baseDir\public\apk\PW-Teacher-Studio.apk" -Force
+
 # Copy to PC Downloads
 $downloadsApk = "C:\Users\vivek\Downloads\PW-Teacher-Studio.apk"
 Copy-Item $outputApk $downloadsApk -Force
+Copy-Item $outputApk "C:\Users\vivek\Downloads\PW-Teacher-Studio-v3.apk" -Force
 Write-Host "[+] Copied to PC Downloads: $downloadsApk" -ForegroundColor Cyan
 
 # Copy to Vivek's S25 Phone
 $phoneDownloadDir = "C:\Users\vivek\CrossDevice\Vivek's S25\storage\Download"
 if (Test-Path $phoneDownloadDir) {
     Copy-Item $outputApk "$phoneDownloadDir\PW-Teacher-Studio.apk" -Force
-    Write-Host "[+] Copied to Vivek's S25 Phone: $phoneDownloadDir\PW-Teacher-Studio.apk" -ForegroundColor Green
+    Copy-Item $outputApk "$phoneDownloadDir\PW-Teacher-Studio-v3.apk" -Force
+    Write-Host "[+] Copied to Vivek's S25 Phone: $phoneDownloadDir\PW-Teacher-Studio-v3.apk" -ForegroundColor Green
 }

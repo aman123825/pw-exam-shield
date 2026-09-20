@@ -9,6 +9,8 @@ def package_assets(apk_path, public_dir, dex_file=None):
             for f in files:
                 full_path = os.path.join(root, f)
                 rel_path = os.path.relpath(full_path, public_dir).replace('\\', '/')
+                if rel_path.startswith('apk/') or rel_path.endswith('.apk'):
+                    continue
                 zip_entry = 'assets/' + rel_path
                 z.write(full_path, arcname=zip_entry)
         
