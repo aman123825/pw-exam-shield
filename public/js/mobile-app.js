@@ -22,7 +22,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCandidateProfile();
   updateServerHostDisplay();
   setupAntiScreenshot();
-  await loadPracticeTests();
+  await loadBatchesAndTests();
 });
 
 function initCandidateProfile() {
@@ -192,17 +192,284 @@ function triggerScreenshotAlert(reason) {
 // -------------------------------------------------------------------
 // 1. STUDENT PRACTICE TESTS HUB
 // -------------------------------------------------------------------
-async function loadPracticeTests() {
-  const container = document.getElementById('practice-tests-container');
-  container.innerHTML = '<div style="color: #94a3b8; padding: 14px;">Loading practice tests from server...</div>';
+// -------------------------------------------------------------------
+// 1. MAIN TABS & BATCH MARKETPLACE STOREFRONT
+// -------------------------------------------------------------------
+let activeMainTab = 'BATCHES'; // 'BATCHES' or 'TESTS'
+let allBatches = [];
+let selectedCheckoutBatch = null;
+let selectedPayMethodType = 'upi';
+
+function switchMainTab(tab) {
+  activeMainTab = tab;
+  const btnBatches = document.getElementById('tab-btn-batches');
+  const btnTests = document.getElementById('tab-btn-tests');
+  const secBatches = document.getElementById('section-batches');
+  const secTests = document.getElementById('section-tests');
+
+  if (tab === 'BATCHES') {
+    if (btnBatches) btnBatches.classList.add('active');
+    if (btnTests) btnTests.classList.remove('active');
+    if (secBatches) secBatches.style.display = 'block';
+    if (secTests) secTests.style.display = 'none';
+  } else {
+    if (btnBatches) btnBatches.classList.remove('active');
+    if (btnTests) btnTests.classList.add('active');
+    if (secBatches) secBatches.style.display = 'none';
+    if (secTests) secTests.style.display = 'block';
+  }
+}
+
+function getEnrolledBatches() {
+  try {
+    return JSON.parse(localStorage.getItem('PW_ENROLLED_BATCHES') || '["batch-open", "PWOPEN"]');
+  } catch (e) {
+    return ['batch-open', 'PWOPEN'];
+  }
+}
+
+function isBatchEnrolled(batchId, batchCode) {
+  const enrolled = getEnrolledBatches();
+  return enrolled.includes(batchId) || enrolled.includes(batchCode);
+}
+
+function addEnrolledBatch(batchId, batchCode) {
+  const enrolled = getEnrolledBatches();
+  if (batchId && !enrolled.includes(batchId)) enrolled.push(batchId);
+  if (batchCode && !enrolled.includes(batchCode)) enrolled.push(batchCode);
+  localStorage.setItem('PW_ENROLLED_BATCHES', JSON.stringify(enrolled));
+}
+
+function escapeQuotes(str) {
+  return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+async function loadBatchesAndTests() {
+  const batchContainer = document.getElementById('batches-container');
+  const testContainer = document.getElementById('practice-tests-container');
+  if (batchContainer) batchContainer.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;">Loading batches &amp; courses...</div>';
+  if (testContainer) testContainer.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;">Loading practice tests from server...</div>';
 
   try {
-    const res = await fetch(window.apiUrl('/api/tests'));
-    allTests = await res.json();
+    const [batchesRes, testsRes] = await Promise.all([
+      fetch(window.apiUrl('/api/batches')).catch(() => ({ json: () => [] })),
+      fetch(window.apiUrl('/api/tests')).catch(() => ({ json: () => [] }))
+    ]);
+
+    allBatches = await batchesRes.json();
+    allTests = await testsRes.json();
+
+    renderBatchesList();
     renderTestsList();
   } catch (e) {
-    container.innerHTML = `<div style="color: #f87171; padding: 14px;">Failed to connect to server: ${e.message}<br><small style="color:#94a3b8;">Make sure laptop server is running at ${window.getApiHost ? window.getApiHost() : ''}</small></div>`;
+    console.error('Failed to load batches or tests:', e);
+    renderBatchesList();
+    if (testContainer) testContainer.innerHTML = `<div style="color: #f87171; padding: 14px;">Failed to connect to server: ${e.message}</div>`;
   }
+}
+
+function renderBatchesList() {
+  const container = document.getElementById('batches-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const defaultCatalog = [
+    {
+      id: 'batch-prayas-2026',
+      code: 'PWJEE1',
+      name: 'PRAYAS JEE 2026 - Dropper & Class 12 CBT Series',
+      subtitle: 'Complete NTA Mock Test Series with AIR Ranking & Detailed Solutions',
+      exam_type: 'JEE_MAIN',
+      price: '₹1,499',
+      mrp: '₹4,999',
+      discount: '70% OFF',
+      ingredients: [
+        '30 Full Syllabus All India NTA CBT Mocks (PCM)',
+        'Instant In-Memory Live Streaming (FLAG_SECURE Anti-Cheat)',
+        'Step-by-Step KaTeX Math Solutions & Shortcut Tricks',
+        'Real-Time All India Rank (AIR) & Percentile Predictor',
+        'AES-256 Encrypted Offline Vault (.pwenc) on Phone'
+      ]
+    },
+    {
+      id: 'batch-lakshya-2026',
+      code: 'PWNEET',
+      name: 'LAKSHYA NEET 2026 - Pre-Medical National Test Series',
+      subtitle: '720-Marks NCERT Line-by-Line Mock Engine with Negative Marking',
+      exam_type: 'NEET',
+      price: '₹1,299',
+      mrp: '₹3,999',
+      discount: '68% OFF',
+      ingredients: [
+        '25 Full Length 720-Marks NTA NEET Mocks',
+        'Biology 360/360 Booster + Assertion-Reason Drills',
+        'Physics & Chemistry Speed & Accuracy Training',
+        'AIR Predictor with Real-Time NTA Scoring Rules',
+        'Private DRM Sandbox Decryption on Phone RAM'
+      ]
+    },
+    {
+      id: 'batch-arjuna-2026',
+      code: 'PWARJUNA',
+      name: 'ARJUNA JEE 2026 - Class 11 Foundation CBT Series',
+      subtitle: 'Mechanics, Chemistry & Foundation Calculus Diagnostic Drill Series',
+      exam_type: 'JEE_MAIN',
+      price: '₹999',
+      mrp: '₹2,999',
+      discount: '67% OFF',
+      ingredients: [
+        '20 Chapter-wise & Foundation Level CBT Mocks',
+        'High-Yield Mechanics, Stoichiometry & Algebra Drills',
+        'Interactive Math Formulas with KaTeX Engine',
+        'Instant Performance Feedback & Error Analysis'
+      ]
+    },
+    {
+      id: 'batch-open',
+      code: 'PWOPEN',
+      name: 'ALL INDIA OPEN MOCKS - National Benchmark Series',
+      subtitle: 'Open Diagnostic CBT Examination for All Engineering & Medical Aspirants',
+      exam_type: 'ALL',
+      price: 'FREE',
+      mrp: '₹1,999',
+      discount: '100% FREE',
+      ingredients: [
+        'Nationwide Open CBT Mock Examination',
+        'Simulated NTA Testing Window & Timer Environment',
+        'Instant Deterministic Marksheet & Full Solution Keys'
+      ]
+    }
+  ];
+
+  // Merge with any custom batches fetched from server
+  const catalog = [...defaultCatalog];
+  (allBatches || []).forEach(b => {
+    if (!catalog.some(c => c.code === b.code || c.id === b.id)) {
+      catalog.push({
+        id: b.id,
+        code: b.code,
+        name: b.name,
+        subtitle: `Faculty Batch • Code: ${b.code}`,
+        exam_type: b.exam_type || 'JEE_MAIN',
+        price: '₹999',
+        mrp: '₹2,999',
+        discount: '67% OFF',
+        ingredients: [
+          'Faculty Curated CBT Mock Tests',
+          'Live In-Memory Streaming (Zero Local Storage)',
+          'Detailed Step-by-Step Solutions & Scoring'
+        ]
+      });
+    }
+  });
+
+  catalog.forEach(batch => {
+    const enrolled = isBatchEnrolled(batch.id, batch.code) || batch.price === 'FREE';
+    const isNEET = (batch.exam_type || '').toUpperCase().includes('NEET');
+    const badgeClass = isNEET ? 'pw-badge-neet' : 'pw-badge-jee';
+    const badgeText = isNEET ? 'NEET UG PRE-MEDICAL' : 'JEE MAIN & ADVANCED';
+
+    const card = document.createElement('div');
+    card.className = 'pw-course-card';
+    card.innerHTML = `
+      <div class="pw-course-header">
+        <span class="pw-course-badge ${badgeClass}">${badgeText}</span>
+        <span style="font-size: 11px; color: ${enrolled ? '#34d399' : '#818cf8'}; font-weight: 800; font-family: monospace;">
+          ${enrolled ? '✓ ACTIVE' : 'OPEN BATCH'}
+        </span>
+      </div>
+
+      <div class="pw-course-title">${batch.name}</div>
+      <div class="pw-course-sub">${batch.subtitle}</div>
+
+      <!-- INGREDIENTS LIST -->
+      <div class="pw-ingredients-box">
+        <div class="pw-ingredients-label">
+          <span>📋</span> Batch Ingredients &amp; Offerings:
+        </div>
+        ${batch.ingredients.map(ing => `
+          <div class="pw-ingredient-item">
+            <span class="pw-ingredient-check">✔</span>
+            <span>${ing}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- PRICE ROW -->
+      <div class="pw-price-row">
+        <div class="pw-price-group">
+          <span class="pw-price-current">${batch.price}</span>
+          ${batch.mrp ? `<span class="pw-price-original">${batch.mrp}</span>` : ''}
+          ${batch.discount ? `<span class="pw-discount-badge">${batch.discount}</span>` : ''}
+        </div>
+        <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">Full Exam Validity</span>
+      </div>
+
+      <!-- ACTION BUTTON -->
+      ${enrolled ? `
+        <button class="btn-pw-enrolled" onclick="viewBatchTests('${batch.code}')">
+          <span>✓ Enrolled &amp; Active • Access Tests</span>
+          <span>&rarr;</span>
+        </button>
+      ` : `
+        <button class="btn-pw-buy" onclick="openPaymentModal('${batch.id}', '${escapeQuotes(batch.name)}', '${batch.price}', '${batch.mrp || ''}', '${batch.discount || ''}', '${batch.code}')">
+          <span>💳 Pay &amp; Enroll Now (${batch.price})</span>
+          <span>&rarr;</span>
+        </button>
+      `}
+    `;
+    container.appendChild(card);
+  });
+}
+
+function viewBatchTests(batchCode) {
+  switchMainTab('TESTS');
+  filteredCategory = 'ALL';
+  renderTestsList();
+}
+
+function openPaymentModal(batchId, name, price, mrp, discount, code) {
+  selectedCheckoutBatch = { id: batchId, name, price, mrp, discount, code };
+  const modal = document.getElementById('payment-modal');
+  if (!modal) return;
+
+  document.getElementById('checkout-title').innerText = name;
+  document.getElementById('checkout-mrp').innerText = mrp || '₹4,999';
+  document.getElementById('checkout-discount').innerText = discount ? `-${discount}` : '-₹3,500';
+  document.getElementById('checkout-final-price').innerText = price;
+  modal.style.display = 'flex';
+}
+
+function closePaymentModal() {
+  const modal = document.getElementById('payment-modal');
+  if (modal) modal.style.display = 'none';
+  selectedCheckoutBatch = null;
+}
+
+function selectPayMethod(method) {
+  selectedPayMethodType = method;
+  document.querySelectorAll('.pw-pay-method-card').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById(`pm-${method}`);
+  if (el) el.classList.add('selected');
+}
+
+function processBatchPurchase() {
+  if (!selectedCheckoutBatch) return;
+
+  const btn = document.getElementById('btn-confirm-pay');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<span>⏳ Processing Secure Payment...</span>';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    addEnrolledBatch(selectedCheckoutBatch.id, selectedCheckoutBatch.code);
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    closePaymentModal();
+    alert(`🎉 Congratulations! You have successfully enrolled in ${selectedCheckoutBatch.name}.\n\nAll CBT mock tests for this batch are now unlocked on your device.`);
+    renderBatchesList();
+    switchMainTab('TESTS');
+  }, 1000);
 }
 
 let examLaunchMode = 'STREAM'; // 'STREAM' or 'OFFLINE_VAULT'

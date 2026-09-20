@@ -67,18 +67,6 @@
         </div>
       </header>
 
-      <!-- Direct APK Download Link for Phone Browser Users -->
-      <a href="apk/PW-Student-Exam.apk" download style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(6, 78, 59, 0.9) 0%, rgba(6, 95, 70, 0.9) 100%); border: 1.5px solid #10b981; border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 14px; color: #ffffff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 20px;">📥</span>
-          <div>
-            <div style="font-size: 12px; font-weight: 800; color: #ffffff;">Download Native App (v3.0 APK)</div>
-            <div style="font-size: 10px; color: #a7f3d0;">Direct 1-tap download &amp; update for Android</div>
-          </div>
-        </div>
-        <span style="font-size: 11px; font-weight: 800; background: #10b981; color: #022c22; padding: 4px 10px; border-radius: 6px;">DOWNLOAD &darr;</span>
-      </a>
-
       <!-- Candidate Profile Banner -->
       <div class="pw-profile-card" onclick="openProfileModal()">
         <div class="pw-avatar-circle" id="portal-avatar">PW</div>
@@ -94,35 +82,47 @@
         </div>
       </div>
 
-      <!-- Batch Enrollment Card -->
-      <div class="pw-batch-card">
-        <div class="pw-batch-header">
-          <span>🎓</span> Join Faculty Batch
+      <!-- Main Navigation Tabs (Courses/Batches vs Mock Tests) -->
+      <div class="pw-main-tabs">
+        <button class="pw-main-tab active" id="tab-btn-batches" onclick="switchMainTab('BATCHES')">
+          <span>🎓</span> All Batches &amp; Courses
+        </button>
+        <button class="pw-main-tab" id="tab-btn-tests" onclick="switchMainTab('TESTS')">
+          <span>📝</span> CBT Mock Tests
+        </button>
+      </div>
+
+      <!-- TAB 1: BATCHES MARKETPLACE (READ INGREDIENTS & PAY/BUY DIRECTLY) -->
+      <div id="section-batches">
+        <div class="pw-section-title">
+          <span>Explore PW Test Series Batches</span>
+          <span style="font-size: 10px; font-weight: 800; color: #34d399; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 8px; border-radius: var(--radius-full);">Direct Enrollment</span>
         </div>
-        <div class="pw-input-row">
-          <input type="text" id="batch-code-input" placeholder="Enter Batch Code (e.g. PWJEE25)" class="pw-input-field">
-          <button class="pw-btn-join" onclick="joinBatch()">Join Batch</button>
+        <div id="batches-container">
+          <!-- Filled dynamically with course cards, full ingredients list, and Buy Now buttons -->
         </div>
-        <div id="join-status-msg" style="font-size: 11px; margin-top: 6px; display: none;"></div>
       </div>
 
-      <!-- Category Filter Tabs -->
-      <div class="pw-filter-scroll">
-        <button class="section-chip active" id="filter-all" onclick="filterTests('ALL', this)">🔥 All Tests</button>
-        <button class="section-chip" id="filter-jee" onclick="filterTests('JEE_MAIN', this)">⚡ JEE Main</button>
-        <button class="section-chip" id="filter-neet" onclick="filterTests('NEET', this)">🩺 NEET Pre-Med</button>
-        <button class="section-chip" id="filter-offline" onclick="filterTests('OFFLINE_VAULT', this)" style="border-color: rgba(16, 185, 129, 0.4); color: #34d399;">🔒 Offline Vault</button>
-      </div>
+      <!-- TAB 2: CBT MOCK TESTS HUB -->
+      <div id="section-tests" style="display: none;">
+        <!-- Category Filter Tabs -->
+        <div class="pw-filter-scroll">
+          <button class="section-chip active" id="filter-all" onclick="filterTests('ALL', this)">🔥 All Tests</button>
+          <button class="section-chip" id="filter-jee" onclick="filterTests('JEE_MAIN', this)">⚡ JEE Main</button>
+          <button class="section-chip" id="filter-neet" onclick="filterTests('NEET', this)">🩺 NEET Pre-Med</button>
+          <button class="section-chip" id="filter-offline" onclick="filterTests('OFFLINE_VAULT', this)" style="border-color: rgba(16, 185, 129, 0.4); color: #34d399;">🔒 Offline Vault</button>
+        </div>
 
-      <!-- Section Title -->
-      <div class="pw-section-title">
-        <span>Available Mock Tests</span>
-        <span style="font-size: 11px; font-weight: 700; color: #34d399; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 8px; border-radius: var(--radius-full);">⚡ Live Streamed</span>
-      </div>
+        <!-- Section Title -->
+        <div class="pw-section-title">
+          <span>Available Mock Tests</span>
+          <span style="font-size: 11px; font-weight: 700; color: #34d399; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 8px; border-radius: var(--radius-full);">⚡ Live Streamed</span>
+        </div>
 
-      <!-- Practice Tests Feed -->
-      <div id="practice-tests-container">
-        <!-- Filled dynamically -->
+        <!-- Practice Tests Feed -->
+        <div id="practice-tests-container">
+          <!-- Filled dynamically -->
+        </div>
       </div>
     </div>
 
@@ -396,6 +396,92 @@
         </button>
         <button onclick="saveCandidateProfile()" class="btn-m-start" style="flex: 1.5; padding: 12px;">
           Save Profile &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: SECURE BATCH CHECKOUT & PAYMENT                            -->
+  <!-- ================================================================= -->
+  <div id="payment-modal" class="pw-modal-backdrop">
+    <div class="pw-modal-card">
+      <div class="pw-modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="pw-logo-badge" style="font-size: 11px; padding: 3px 6px;">PW PAY</span>
+          <div>
+            <div class="pw-modal-title" id="checkout-title">Batch Enrollment</div>
+            <div class="pw-modal-subtitle" id="checkout-target">Official Physics Wallah Course</div>
+          </div>
+        </div>
+        <button class="pw-modal-close" onclick="closePaymentModal()">&times;</button>
+      </div>
+
+      <div class="pw-modal-body">
+        <!-- Order Summary Breakdown -->
+        <div class="pw-checkout-breakdown">
+          <div class="pw-checkout-line">
+            <span>Course / Test Series MRP</span>
+            <span style="text-decoration: line-through;" id="checkout-mrp">₹4,999</span>
+          </div>
+          <div class="pw-checkout-line" style="color: #10b981; font-weight: 700;">
+            <span id="checkout-discount-label">PW Scholarship Discount (70% OFF)</span>
+            <span id="checkout-discount">-₹3,500</span>
+          </div>
+          <div class="pw-checkout-line">
+            <span>Platform &amp; NTA CBT Server Fee</span>
+            <span style="color: #10b981; font-weight: 700;">FREE</span>
+          </div>
+          <div class="pw-checkout-line total">
+            <span>Total Net Payable</span>
+            <span id="checkout-final-price" style="color: #4f46e5;">₹1,499</span>
+          </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div style="font-size: 12px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">
+          Select Payment Method:
+        </div>
+
+        <div class="pw-pay-method-card selected" id="pm-upi" onclick="selectPayMethod('upi')">
+          <div class="pw-pay-radio"></div>
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 800; color: #0f172a;">UPI Instant Checkout</div>
+            <div style="font-size: 11px; color: #64748b;">Google Pay • PhonePe • Paytm • BHIM UPI</div>
+          </div>
+          <span style="font-size: 18px;">⚡</span>
+        </div>
+
+        <div class="pw-pay-method-card" id="pm-card" onclick="selectPayMethod('card')">
+          <div class="pw-pay-radio"></div>
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 800; color: #0f172a;">Debit / Credit Card</div>
+            <div style="font-size: 11px; color: #64748b;">Visa • Mastercard • RuPay • NetBanking</div>
+          </div>
+          <span style="font-size: 18px;">💳</span>
+        </div>
+
+        <div class="pw-pay-method-card" id="pm-demo" onclick="selectPayMethod('demo')">
+          <div class="pw-pay-radio"></div>
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 800; color: #10b981;">One-Click Demo Instant Unlock</div>
+            <div style="font-size: 11px; color: #64748b;">Zero Charges • Instant Test Series Activation</div>
+          </div>
+          <span style="font-size: 18px;">🎁</span>
+        </div>
+
+        <div style="font-size: 10.5px; color: #64748b; text-align: center; margin-top: 10px; line-height: 1.4;">
+          🔒 256-Bit SSL Encrypted Payment Gateway • Instant Access Activated
+        </div>
+      </div>
+
+      <div class="pw-modal-footer">
+        <button onclick="closePaymentModal()" class="btn-m-action btn-m-clear" style="flex: 1; padding: 12px;">
+          Cancel
+        </button>
+        <button id="btn-confirm-pay" onclick="processBatchPurchase()" class="btn-m-start" style="flex: 1.6; padding: 12px; background: var(--pw-green-gradient);">
+          <span>Pay &amp; Unlock Batch</span>
+          <span>&rarr;</span>
         </button>
       </div>
     </div>

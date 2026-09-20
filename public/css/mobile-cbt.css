@@ -194,18 +194,119 @@ body {
   letter-spacing: 0.3px;
 }
 
-/* Batch Enrollment Card */
-.pw-batch-card {
-  background: var(--pw-surface-card);
+/* Main App Navigation Tabs (Batches vs Mock Tests) */
+.pw-main-tabs {
+  display: flex;
+  background: var(--pw-surface);
   border: 1px solid var(--pw-border);
   border-radius: var(--radius-md);
-  padding: 14px 16px;
+  padding: 4px;
   margin-bottom: 18px;
-  box-shadow: var(--shadow-sm);
+  gap: 4px;
 }
 
-.pw-batch-header {
+.pw-main-tab {
+  flex: 1;
+  padding: 10px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--pw-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pw-main-tab.active {
+  background: var(--pw-primary-gradient);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+/* ==========================================================================
+   BATCH / COURSE MARKETPLACE CARD (PHYSICS WALLAH STOREFRONT)
+   ========================================================================== */
+.pw-course-card {
+  background: var(--pw-surface-card);
+  border: 1.5px solid var(--pw-border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.pw-course-card:active {
+  transform: scale(0.99);
+}
+
+.pw-course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.pw-course-badge {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.pw-badge-jee {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.pw-badge-neet {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.pw-badge-foundation {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.pw-course-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+
+.pw-course-sub {
   font-size: 11px;
+  color: var(--pw-text-muted);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+/* Ingredients Box (What this batch offers) */
+.pw-ingredients-box {
+  background: rgba(11, 15, 25, 0.65);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.pw-ingredients-label {
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -216,43 +317,170 @@ body {
   gap: 6px;
 }
 
-.pw-input-row {
+.pw-ingredient-item {
+  font-size: 11.5px;
+  color: #cbd5e1;
   display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.pw-ingredient-item:last-child {
+  margin-bottom: 0;
+}
+
+.pw-ingredient-check {
+  color: #10b981;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+/* Price Row */
+.pw-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-top: 4px;
+}
+
+.pw-price-group {
+  display: flex;
+  align-items: baseline;
   gap: 8px;
 }
 
-.pw-input-field {
-  flex: 1;
-  background: var(--pw-surface);
-  border: 1.5px solid var(--pw-border);
+.pw-price-current {
+  font-size: 22px;
+  font-weight: 900;
   color: #ffffff;
-  padding: 10px 14px;
+}
+
+.pw-price-original {
   font-size: 13px;
+  color: var(--pw-text-subtle);
+  text-decoration: line-through;
   font-weight: 600;
-  border-radius: var(--radius-sm);
-  outline: none;
-  transition: border-color 0.2s;
 }
 
-.pw-input-field:focus {
-  border-color: #6366f1;
-}
-
-.pw-btn-join {
-  background: var(--pw-accent-gradient);
-  color: #0f172a;
-  border: none;
-  padding: 10px 18px;
-  font-size: 13px;
+.pw-discount-badge {
+  font-size: 11px;
   font-weight: 800;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
-  transition: transform 0.1s;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 2px 7px;
+  border-radius: 4px;
 }
 
-.pw-btn-join:active {
-  transform: scale(0.97);
+/* Buy & Enroll CTA */
+.btn-pw-buy {
+  width: 100%;
+  background: var(--pw-primary-gradient);
+  color: #ffffff;
+  border: none;
+  padding: 13px 18px;
+  font-size: 14px;
+  font-weight: 900;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-pw-buy:active {
+  transform: scale(0.98);
+}
+
+.btn-pw-enrolled {
+  width: 100%;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1.5px solid rgba(16, 185, 129, 0.4);
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 900;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   PAYMENT & CHECKOUT MODAL COMPONENTS
+   ========================================================================== */
+.pw-checkout-breakdown {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.pw-checkout-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.pw-checkout-line.total {
+  border-top: 1.5px dashed #cbd5e1;
+  padding-top: 8px;
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.pw-pay-method-card {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pw-pay-method-card.selected {
+  border-color: #4f46e5;
+  background: #eef2ff;
+}
+
+.pw-pay-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pw-pay-method-card.selected .pw-pay-radio {
+  border-color: #4f46e5;
+  background: #4f46e5;
+}
+
+.pw-pay-method-card.selected .pw-pay-radio::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
 }
 
 /* Segmented Category Filter Pills */
