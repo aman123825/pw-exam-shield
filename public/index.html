@@ -82,13 +82,13 @@
         </div>
       </div>
 
-      <!-- Main Navigation Tabs (Courses/Batches vs Mock Tests) -->
+      <!-- Main Navigation Tabs (Test Series vs Mock Tests) -->
       <div class="pw-main-tabs">
         <button class="pw-main-tab active" id="tab-btn-batches" onclick="switchMainTab('BATCHES')">
-          <span>🎓</span> All Batches &amp; Courses
+          <span>🎯</span> Test Series Batches
         </button>
         <button class="pw-main-tab" id="tab-btn-tests" onclick="switchMainTab('TESTS')">
-          <span>📝</span> CBT Mock Tests
+          <span>📝</span> CBT Test Papers
         </button>
       </div>
 
@@ -99,7 +99,7 @@
           <span style="font-size: 10px; font-weight: 800; color: #34d399; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 8px; border-radius: var(--radius-full);">Direct Enrollment</span>
         </div>
         <div id="batches-container">
-          <!-- Filled dynamically with course cards, full ingredients list, and Buy Now buttons -->
+          <!-- Filled dynamically with test series cards, full test ingredients list, and Buy Now buttons -->
         </div>
       </div>
 
@@ -411,7 +411,7 @@
           <span class="pw-logo-badge" style="font-size: 11px; padding: 3px 6px;">PW PAY</span>
           <div>
             <div class="pw-modal-title" id="checkout-title">Batch Enrollment</div>
-            <div class="pw-modal-subtitle" id="checkout-target">Official Physics Wallah Course</div>
+            <div class="pw-modal-subtitle" id="checkout-target">Physics Wallah CBT Test Series</div>
           </div>
         </div>
         <button class="pw-modal-close" onclick="closePaymentModal()">&times;</button>
@@ -421,7 +421,7 @@
         <!-- Order Summary Breakdown -->
         <div class="pw-checkout-breakdown">
           <div class="pw-checkout-line">
-            <span>Course / Test Series MRP</span>
+            <span>Test Series Package MRP</span>
             <span style="text-decoration: line-through;" id="checkout-mrp">₹4,999</span>
           </div>
           <div class="pw-checkout-line" style="color: #10b981; font-weight: 700;">

@@ -247,7 +247,7 @@ function escapeQuotes(str) {
 async function loadBatchesAndTests() {
   const batchContainer = document.getElementById('batches-container');
   const testContainer = document.getElementById('practice-tests-container');
-  if (batchContainer) batchContainer.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;">Loading batches &amp; courses...</div>';
+  if (batchContainer) batchContainer.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;">Loading test series batches...</div>';
   if (testContainer) testContainer.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;">Loading practice tests from server...</div>';
 
   try {
