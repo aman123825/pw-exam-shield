@@ -1,0 +1,22 @@
+{
+  "name": "PW Exam Shield - CBT Mobile Test Series",
+  "short_name": "PW Shield",
+  "description": "Secure Institutional Computer Based Test Mobile Application",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#1b3558",
+  "icons": [
+    {
+      "src": "/assets/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

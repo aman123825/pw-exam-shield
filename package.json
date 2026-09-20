@@ -1,0 +1,15 @@
+{
+  "name": "pw-exam-shield-mobile",
+  "version": "1.0.0",
+  "description": "Native Mobile CBT Examination Application for Students and Teachers with FLAG_SECURE Anti-Screenshot Protection",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "katex": "^0.16.11"
+  }
+}

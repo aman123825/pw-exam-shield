@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>PW Exam Shield — Mobile CBT Test Series</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="css/mobile-cbt.css">
+  <script src="vendor/katex/katex.min.js"></script>
+  <style>
+    /* Responsive phone frame container when viewed on desktop browsers */
+    @media (min-width: 650px) {
+      body {
+        background: #090d16;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mobile-app-shell {
+        max-width: 430px;
+        height: 92vh !important;
+        max-height: 890px;
+        border: 4px solid #334155;
+        border-radius: 28px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75);
+        overflow: hidden;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 0. ANTI-SCREENSHOT FLOATING TOAST ALERT -->
+  <div id="screenshot-toast" class="mobile-screenshot-toast">
+    <span style="font-size: 20px;">🛡️</span>
+    <div>
+      <div style="font-size: 13px; font-weight: bold;">SCREENSHOT BLOCKED (FLAG_SECURE)!</div>
+      <div style="font-size: 10px; font-weight: normal; color: #fee2e2;">Screen captures and recording are strictly prohibited. System clipboard wiped clean.</div>
+    </div>
+  </div>
+
+  <!-- 0. ANTI-SCREENSHOT WATERMARK LAYER -->
+  <div id="watermark-layer" class="mobile-watermark">
+    <!-- Generated dynamically -->
+  </div>
+
+  <div class="mobile-app-shell">
+
+    <!-- ================================================================= -->
+    <!-- VIEW 1: STUDENT PRACTICE PORTAL & HUB                             -->
+    <!-- ================================================================= -->
+    <div id="view-portal" class="mobile-portal-view" style="display: flex; flex-direction: column;">
+      <!-- Portal Top Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="mobile-logo-badge">PW CBT</span>
+          <span style="font-size: 15px; font-weight: bold; color: #ffffff;">PW Exam Shield</span>
+        </div>
+        <!-- Role Switcher Pill -->
+        <div style="display: flex; background: #1e293b; border: 1px solid #475569; border-radius: 16px; padding: 2px;">
+          <button id="btn-role-student" onclick="switchRole('STUDENT')" style="background: #3b82f6; color: #ffffff; border: none; border-radius: 14px; padding: 4px 10px; font-size: 11px; font-weight: bold; cursor: pointer;">
+            Student
+          </button>
+          <button id="btn-role-teacher" onclick="switchRole('TEACHER')" style="background: none; color: #94a3b8; border: none; border-radius: 14px; padding: 4px 10px; font-size: 11px; font-weight: bold; cursor: pointer;">
+            Teacher
+          </button>
+        </div>
+      </div>
+
+      <!-- Server Connection Indicator & Quick Config -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 11px;">
+        <div id="server-status-pill" onclick="promptServerHost()" style="cursor: pointer; background: #0f172a; border: 1px solid #1e3a8a; padding: 4px 10px; border-radius: 6px; color: #93c5fd; display: flex; align-items: center; gap: 6px;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+          <span id="server-host-label">Server: 10.59.3.209:3001</span>
+          <span style="font-size: 11px; opacity: 0.7;">✏️</span>
+        </div>
+        <div style="color: #64748b; font-size: 10px; font-family: monospace;">
+          MODE: LIVE STREAM / DRM
+        </div>
+      </div>
+
+      <!-- Candidate Profile Pill & Security Badge -->
+      <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 13px; font-weight: bold; color: #ffffff;" id="portal-student-name">Arjun Verma</div>
+          <div style="font-size: 11px; color: #94a3b8;" id="portal-student-roll">Roll: ROLL-2025-01 • Batch: PWJEE1</div>
+        </div>
+        <div class="mobile-shield-pill">
+          FLAG_SECURE ACTIVE
+        </div>
+      </div>
+
+      <!-- Batch Join Code Box -->
+      <div style="background: #172554; border: 1px solid #2563eb; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+        <div style="font-size: 11px; font-weight: bold; color: #93c5fd; margin-bottom: 6px;">JOIN TEACHER'S PRIVATE BATCH</div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="batch-code-input" placeholder="Enter 6-char code (e.g. PWJEE1)" style="flex: 1; background: #0f172a; border: 1px solid #3b82f6; color: #ffffff; padding: 8px 10px; font-size: 12px; border-radius: 6px; text-transform: uppercase;">
+          <button onclick="joinBatch()" style="background: #f29306; color: #0f172a; border: none; padding: 8px 14px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+            Join
+          </button>
+        </div>
+        <div id="join-status-msg" style="font-size: 11px; margin-top: 4px; display: none;"></div>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div style="display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px;">
+        <button class="section-chip active" id="filter-all" onclick="filterTests('ALL', this)">All Tests</button>
+        <button class="section-chip" id="filter-jee" onclick="filterTests('JEE_MAIN', this)">JEE Main Mocks</button>
+        <button class="section-chip" id="filter-neet" onclick="filterTests('NEET', this)">NEET Pre-Medical</button>
+        <button class="section-chip" id="filter-offline" onclick="filterTests('OFFLINE_VAULT', this)" style="border-color: #10b981; color: #34d399;">🔒 Offline Vault</button>
+      </div>
+
+      <!-- Practice Tests List -->
+      <div style="font-size: 13px; font-weight: bold; color: #cbd5e1; margin-bottom: 10px;">
+        Available Practice Tests:
+      </div>
+      <div id="practice-tests-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 2: ACTIVE CBT EXAM TERMINAL                                  -->
+    <!-- ================================================================= -->
+    <div id="view-exam" style="display: none; height: 100%; flex-direction: column;">
+      <!-- Mobile Top Bar with Timer -->
+      <header class="mobile-topbar">
+        <div class="mobile-brand">
+          <span class="mobile-logo-badge">PW</span>
+          <span class="mobile-title" id="exam-test-title">CBT Examination</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="mobile-shield-pill">SECURE</div>
+          <div class="mobile-timer-pill" id="mobile-timer-pill">
+            <span id="mobile-clock">02:59:59</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Candidate Subbar -->
+      <div class="mobile-subbar">
+        <div class="mobile-subbar-user">
+          <div class="mobile-user-avatar">AV</div>
+          <span style="font-weight: bold; color: #ffffff;" id="exam-student-label">Arjun Verma</span>
+        </div>
+        <div style="color: #94a3b8;" id="exam-section-label">Section A</div>
+      </div>
+
+      <!-- Section Chips -->
+      <div class="mobile-section-chips" id="mobile-section-chips">
+        <!-- Filled dynamically -->
+      </div>
+
+      <!-- Main Question Scroll Area -->
+      <main class="mobile-question-workspace">
+        <div class="q-meta-row">
+          <span class="q-num-badge" id="m-q-num">Question 1</span>
+          <span class="q-marks-pill" id="m-q-marks">+4.0 / -1.0</span>
+        </div>
+
+        <!-- Question Text with KaTeX -->
+        <div class="q-text-body" id="m-q-text">
+          Loading question text...
+        </div>
+
+        <!-- Answers Area: SCQ Radio Cards or Virtual Keypad -->
+        <div id="m-answers-box">
+          <!-- Dynamic -->
+        </div>
+      </main>
+
+      <!-- Floating Question Palette Button -->
+      <div class="floating-palette-btn" onclick="openPaletteSheet()">
+        <span>📋</span>
+        <span id="palette-btn-text">Palette (0/5)</span>
+      </div>
+
+      <!-- Bottom Fixed Action Bar -->
+      <footer class="mobile-bottom-bar">
+        <button class="btn-m-action btn-m-clear" onclick="handleClear()">
+          Clear
+        </button>
+        <button class="btn-m-action btn-m-review" onclick="handleMarkReview()">
+          Review
+        </button>
+        <button class="btn-m-action btn-m-next" onclick="handleSaveNext()">
+          Save &amp; Next &rarr;
+        </button>
+        <button class="btn-m-action" style="background: #1b3558; color: #ffffff;" onclick="confirmSubmitExam()">
+          Submit
+        </button>
+      </footer>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 3: TEACHER STUDIO (MOBILE DASHBOARD)                         -->
+    <!-- ================================================================= -->
+    <div id="view-teacher" class="teacher-mobile-container" style="display: none;">
+      <!-- Teacher Top Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="mobile-logo-badge" style="background: #c084fc; color: #1e1b4b;">FACULTY</span>
+          <span style="font-size: 15px; font-weight: bold; color: #ffffff;">Teacher Studio</span>
+        </div>
+        <button onclick="switchRole('STUDENT')" style="background: #334155; color: #f8fafc; border: none; border-radius: 14px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">
+          &larr; Student View
+        </button>
+      </div>
+
+      <!-- Batch Management Card -->
+      <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+        <div style="font-size: 14px; font-weight: bold; color: #38bdf8; margin-bottom: 8px;">1. Create Batch &amp; Join Code</div>
+        <div class="t-input-group">
+          <label class="t-input-label">BATCH NAME</label>
+          <input type="text" id="t-batch-name" placeholder="e.g. Lakshya JEE 2025" class="t-text-input">
+        </div>
+        <div class="t-input-group">
+          <label class="t-input-label">JOIN CODE (SHARE WITH STUDENTS)</label>
+          <input type="text" id="t-batch-code" placeholder="e.g. PWJEE1" class="t-text-input" style="text-transform: uppercase;">
+        </div>
+        <button onclick="createBatch()" style="background: #3b82f6; color: #ffffff; width: 100%; padding: 10px; font-size: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">
+          Create &amp; Activate Batch
+        </button>
+        <div id="t-batch-status" style="font-size: 11px; color: #34d399; margin-top: 6px; display: none;"></div>
+      </div>
+
+      <!-- Test Uploader Card -->
+      <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+        <div style="font-size: 14px; font-weight: bold; color: #f29306; margin-bottom: 8px;">2. Publish Practice Test (Direct to Mobile)</div>
+        <div class="t-input-group">
+          <label class="t-input-label">TARGET BATCH</label>
+          <select id="t-test-batch" class="t-text-input" style="background: #1e293b;">
+            <!-- Filled dynamically -->
+          </select>
+        </div>
+        <div class="t-input-group">
+          <label class="t-input-label">TEST TITLE</label>
+          <input type="text" id="t-test-title" placeholder="e.g. JEE Main 2025 - Physics Mechanics Drill" class="t-text-input">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="t-input-group">
+            <label class="t-input-label">DURATION (MIN)</label>
+            <input type="number" id="t-test-duration" value="60" class="t-text-input">
+          </div>
+          <div class="t-input-group">
+            <label class="t-input-label">TOTAL MARKS</label>
+            <input type="number" id="t-test-marks" value="100" class="t-text-input">
+          </div>
+        </div>
+
+        <div class="t-input-group">
+          <label class="t-input-label">QUESTION 1 TEXT (SUPPORTS $LATEX$)</label>
+          <textarea id="t-q-text" rows="2" class="t-text-input" placeholder="A car travels with speed $v = 20\text{ m/s}$..."></textarea>
+        </div>
+
+        <div class="t-input-group">
+          <label class="t-input-label">OPTIONS (A, B, C, D)</label>
+          <input type="text" id="t-opt-a" placeholder="Option A (Correct)" class="t-text-input" style="margin-bottom: 4px;">
+          <input type="text" id="t-opt-b" placeholder="Option B" class="t-text-input" style="margin-bottom: 4px;">
+          <input type="text" id="t-opt-c" placeholder="Option C" class="t-text-input" style="margin-bottom: 4px;">
+          <input type="text" id="t-opt-d" placeholder="Option D" class="t-text-input">
+        </div>
+
+        <div class="t-input-group">
+          <label class="t-input-label">STEP-BY-STEP SOLUTION</label>
+          <input type="text" id="t-solution-text" placeholder="Detailed formula solution..." class="t-text-input">
+        </div>
+
+        <button onclick="publishTest()" style="background: #16a34a; color: #ffffff; width: 100%; padding: 12px; font-size: 13px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">
+          Publish &amp; Dispatch to Mobile Students &rarr;
+        </button>
+        <div id="t-publish-status" style="font-size: 11px; color: #34d399; margin-top: 6px; display: none;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: NTA EXAM INSTRUCTIONS & SECURITY CONSENT                   -->
+  <!-- ================================================================= -->
+  <div id="instructions-modal" class="palette-bottom-sheet" style="display: none; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: #ffffff; color: #1e293b; border-radius: 16px; padding: 20px; max-width: 400px; width: 100%; max-height: 85vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 12px;">
+        <div>
+          <div style="font-size: 16px; font-weight: bold; color: #1b3558;" id="modal-title">Exam Instructions</div>
+          <div style="font-size: 11px; color: #64748b;" id="modal-meta">180 Mins • 300 Marks</div>
+        </div>
+        <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;">VERIFIED</span>
+      </div>
+
+      <div style="font-size: 12px; line-height: 1.5; color: #334155; margin-bottom: 14px;">
+        <h4 style="color: #1b3558; margin-bottom: 4px;">Examination Rules:</h4>
+        <ul style="margin-left: 18px; margin-bottom: 10px;">
+          <li>Timer counts down continuously. Auto-submission upon expiry.</li>
+          <li>Marking Scheme: <strong style="color: #16a34a;">+4.0</strong> for correct answer, <strong style="color: #dc2626;">-1.0</strong> for wrong answer.</li>
+          <li>Section B questions must be answered using the on-screen numeric keypad.</li>
+        </ul>
+
+        <h4 style="color: #b91c1c; margin-bottom: 4px;">Anti-Screenshot Policy (FLAG_SECURE):</h4>
+        <div style="background: #fef2f2; border: 1px solid #fca5a5; padding: 8px 10px; border-radius: 6px; color: #991b1b; font-size: 11px; margin-bottom: 12px;">
+          Screen capture and screen recordings are strictly disabled. Any attempt triggers immediate clipboard wipeout and is flagged in the teacher's audit log.
+        </div>
+      </div>
+
+      <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 8px 10px; border-radius: 6px; font-size: 11px; margin-bottom: 14px;">
+        <label style="display: flex; gap: 8px; align-items: flex-start; cursor: pointer;">
+          <input type="checkbox" id="chk-agree" onchange="toggleStartTestBtn()">
+          <span style="color: #92400e; font-weight: bold;">
+            I agree to the test instructions and confirm I will not attempt any screenshots or unauthorized assistance.
+          </span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button onclick="closeInstructions()" style="flex: 1; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">
+          Cancel
+        </button>
+        <button id="btn-begin-exam" onclick="startExamNow()" disabled style="flex: 1; background: #16a34a; color: #ffffff; border: none; padding: 10px; border-radius: 6px; font-size: 12px; font-weight: bold; opacity: 0.5; cursor: pointer;">
+          Begin Exam &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- SLIDING NTA QUESTION PALETTE DRAWER (BOTTOM SHEET)                -->
+  <!-- ================================================================= -->
+  <div id="palette-sheet" class="palette-bottom-sheet" onclick="closePaletteSheet(event)">
+    <div class="palette-sheet-content" onclick="event.stopPropagation()">
+      <div class="palette-sheet-header">
+        <span style="font-size: 14px; font-weight: bold; color: #1b3558;">Question Palette</span>
+        <button onclick="closePaletteSheet()" style="background: none; border: none; font-size: 18px; color: #64748b; cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- Legend -->
+      <div class="palette-legend-grid">
+        <div class="legend-pill">
+          <span class="p-badge p-ans" id="leg-ans">0</span>
+          <span>Answered</span>
+        </div>
+        <div class="legend-pill">
+          <span class="p-badge p-notans" id="leg-notans">1</span>
+          <span>Not Answered</span>
+        </div>
+        <div class="legend-pill">
+          <span class="p-badge p-notvis" id="leg-notvis">4</span>
+          <span>Not Visited</span>
+        </div>
+        <div class="legend-pill">
+          <span class="p-badge p-review" id="leg-rev">0</span>
+          <span>Marked Review</span>
+        </div>
+      </div>
+
+      <!-- Question Number Matrix Grid -->
+      <div class="palette-matrix-grid" id="palette-matrix">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: MARKSHEET SCORECARD & SOLUTIONS                           -->
+  <!-- ================================================================= -->
+  <div id="scorecard-modal" class="palette-bottom-sheet" style="display: none; align-items: center; justify-content: center; padding: 14px;">
+    <div style="background: #ffffff; color: #1e293b; border-radius: 16px; padding: 18px; max-width: 410px; width: 100%; max-height: 88vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #16a34a; padding-bottom: 8px; margin-bottom: 12px;">
+        <div>
+          <div style="font-size: 16px; font-weight: bold; color: #16a34a;">Examination Marksheet</div>
+          <div style="font-size: 10px; color: #64748b;">Deterministic Evaluation • NTA Marking Scheme</div>
+        </div>
+        <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;">SUBMITTED</span>
+      </div>
+
+      <!-- KPI Grid -->
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px;">
+        <div style="background: #f1f5f9; padding: 8px; border-radius: 6px; text-align: center;">
+          <div style="font-size: 10px; color: #64748b;">SCORE</div>
+          <div style="font-size: 18px; font-weight: 900; color: #1e3a5f;" id="res-score">0 / 0</div>
+        </div>
+        <div style="background: #f1f5f9; padding: 8px; border-radius: 6px; text-align: center;">
+          <div style="font-size: 10px; color: #64748b;">PERCENTILE</div>
+          <div style="font-size: 18px; font-weight: 900; color: #7e22ce;" id="res-percentile">0%</div>
+        </div>
+        <div style="background: #f1f5f9; padding: 8px; border-radius: 6px; text-align: center;">
+          <div style="font-size: 10px; color: #64748b;">RANK</div>
+          <div style="font-size: 18px; font-weight: 900; color: #b45309;" id="res-rank">#0</div>
+        </div>
+        <div style="background: #f1f5f9; padding: 8px; border-radius: 6px; text-align: center;">
+          <div style="font-size: 10px; color: #64748b;">ACCURACY</div>
+          <div style="font-size: 18px; font-weight: 900; color: #15803d;" id="res-accuracy">0%</div>
+        </div>
+      </div>
+
+      <!-- Step-by-Step Solutions -->
+      <div id="res-solutions-list" style="margin-bottom: 14px;">
+        <!-- Filled dynamically -->
+      </div>
+
+      <button onclick="returnToHub()" style="background: #f29306; color: #0f172a; width: 100%; padding: 12px; font-size: 13px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">
+        &larr; Return to Practice Tests Hub
+      </button>
+    </div>
+  </div>
+
+  <script src="js/offline-vault.js"></script>
+  <script src="js/mobile-app.js"></script>
+</body>
+</html>

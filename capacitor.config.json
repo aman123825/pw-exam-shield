@@ -1,0 +1,9 @@
+{
+  "appId": "com.pw.examshield",
+  "appName": "PW Exam Shield",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  }
+}

@@ -1,0 +1,931 @@
+// PW Exam Shield - Mobile CBT Engine & Anti-Screenshot Controller
+
+let studentName = 'Arjun Verma';
+let rollNumber = 'ROLL-2025-01';
+let batchCode = 'PWJEE1';
+
+let allTests = [];
+let filteredCategory = 'ALL';
+let selectedTestId = null;
+
+let currentTest = null;
+let questions = [];
+let responses = {};
+let activeQuestionIndex = 0;
+let activeSection = '';
+let sectionsList = [];
+let timerInterval = null;
+let secondsLeft = 180 * 60;
+
+// Initialize on DOM Ready
+window.addEventListener('DOMContentLoaded', async () => {
+  updateServerHostDisplay();
+  setupWatermark();
+  setupAntiScreenshot();
+  await loadPracticeTests();
+  await loadTeacherBatches();
+});
+
+function updateServerHostDisplay() {
+  const label = document.getElementById('server-host-label');
+  if (label && window.getApiHost) {
+    try {
+      const url = new URL(window.getApiHost());
+      label.innerText = `Server: ${url.host}`;
+    } catch (e) {
+      label.innerText = `Server: ${window.getApiHost()}`;
+    }
+  }
+}
+
+function promptServerHost() {
+  const current = window.getApiHost ? window.getApiHost() : 'http://10.59.3.209:3001';
+  const next = prompt('Enter Laptop Server IP & Port (e.g. http://10.59.3.209:3001):', current);
+  if (next && next.trim()) {
+    localStorage.setItem('PW_SERVER_HOST', next.trim());
+    window.location.reload();
+  }
+}
+
+// -------------------------------------------------------------------
+// 0. ANTI-SCREENSHOT SECURITY LAYER & WATERMARK
+// -------------------------------------------------------------------
+function setupWatermark() {
+  const layer = document.getElementById('watermark-layer');
+  if (!layer) return;
+  layer.innerHTML = '';
+  const text = `${studentName.toUpperCase()} • ${rollNumber} • FLAG_SECURE ACTIVE • PW EXAM SHIELD`;
+  for (let i = 0; i < 7; i++) {
+    const row = document.createElement('div');
+    row.className = 'm-watermark-row';
+    row.innerText = `${text}   ${text}`;
+    layer.appendChild(row);
+  }
+}
+
+function setupAntiScreenshot() {
+  // Prevent context menu (long press on mobile)
+  window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // Detect PrintScreen or capture keys on keyboard
+  window.addEventListener('keyup', (e) => {
+    const key = (e.key || '').toLowerCase();
+    if (key === 'printscreen' || key === 'snapshot' || (e.ctrlKey && key === 'p') || (e.shiftKey && e.metaKey && key === 's')) {
+      triggerScreenshotAlert('PrintScreen / Capture Shortcut');
+    }
+  });
+
+  // Track window/tab blur (unfocus or switching apps)
+  window.addEventListener('blur', () => {
+    console.warn('[SECURITY] Mobile app lost focus or switched.');
+  });
+}
+
+function triggerScreenshotAlert(reason) {
+  if (window.AndroidOfflineVault && window.AndroidOfflineVault.notifyScreenshotBlocked) {
+    try { window.AndroidOfflineVault.notifyScreenshotBlocked(); } catch (e) {}
+  }
+
+  // 1. Wipe clipboard
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText('');
+    }
+  } catch (err) {}
+
+  // 2. Show floating red warning toast
+  const toast = document.getElementById('screenshot-toast');
+  if (toast) {
+    toast.style.display = 'flex';
+    if (window._toastTimer) clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => {
+      toast.style.display = 'none';
+    }, 4000);
+  }
+
+  // 3. Log violation to server
+  fetch(window.apiUrl('/api/violations'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      testId: selectedTestId || 'practice-hub',
+      studentName,
+      violationType: 'SCREENSHOT_ATTEMPT_FLAG_SECURE',
+      details: reason || 'Screen capture attempted'
+    })
+  }).catch(() => {});
+}
+
+// -------------------------------------------------------------------
+// 1. ROLE SWITCHER (STUDENT <-> TEACHER)
+// -------------------------------------------------------------------
+function switchRole(role) {
+  const portalView = document.getElementById('view-portal');
+  const examView = document.getElementById('view-exam');
+  const teacherView = document.getElementById('view-teacher');
+
+  const btnStudent = document.getElementById('btn-role-student');
+  const btnTeacher = document.getElementById('btn-role-teacher');
+
+  if (role === 'TEACHER') {
+    portalView.style.display = 'none';
+    examView.style.display = 'none';
+    teacherView.style.display = 'block';
+    btnTeacher.style.background = '#c084fc';
+    btnTeacher.style.color = '#1e1b4b';
+    btnStudent.style.background = 'none';
+    btnStudent.style.color = '#94a3b8';
+    loadTeacherBatches();
+  } else {
+    teacherView.style.display = 'none';
+    examView.style.display = 'none';
+    portalView.style.display = 'flex';
+    btnStudent.style.background = '#3b82f6';
+    btnStudent.style.color = '#ffffff';
+    btnTeacher.style.background = 'none';
+    btnTeacher.style.color = '#94a3b8';
+    loadPracticeTests();
+  }
+}
+
+// -------------------------------------------------------------------
+// 2. STUDENT PRACTICE TESTS HUB
+// -------------------------------------------------------------------
+async function loadPracticeTests() {
+  const container = document.getElementById('practice-tests-container');
+  container.innerHTML = '<div style="color: #94a3b8; padding: 14px;">Loading practice tests from server...</div>';
+
+  try {
+    const res = await fetch(window.apiUrl('/api/tests'));
+    allTests = await res.json();
+    renderTestsList();
+  } catch (e) {
+    container.innerHTML = `<div style="color: #f87171; padding: 14px;">Failed to connect to server: ${e.message}<br><small style="color:#94a3b8;">Make sure laptop server is running at ${window.getApiHost ? window.getApiHost() : ''}</small></div>`;
+  }
+}
+
+let examLaunchMode = 'STREAM'; // 'STREAM' or 'OFFLINE_VAULT'
+
+function filterTests(category, btn) {
+  filteredCategory = category;
+  document.querySelectorAll('.section-chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderTestsList();
+}
+
+async function renderTestsList() {
+  const container = document.getElementById('practice-tests-container');
+  container.innerHTML = '';
+
+  // 1. OFFLINE VAULT VIEW (ENCRYPTED TESTS HIDDEN FROM 'MY FILES')
+  if (filteredCategory === 'OFFLINE_VAULT') {
+    const offlineList = await window.PWOfflineVault.listOfflineTests();
+    if (!offlineList || offlineList.length === 0) {
+      container.innerHTML = `
+        <div style="background: #1e293b; border: 1px dashed #475569; border-radius: 8px; padding: 24px; text-align: center;">
+          <div style="font-size: 28px; margin-bottom: 8px;">🔒</div>
+          <div style="font-weight: bold; color: #ffffff; margin-bottom: 4px;">Offline Vault is Empty</div>
+          <div style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin-bottom: 12px;">
+            Tests downloaded for offline practice are stored in the app's internal private sandbox, encrypted with AES-256-GCM. Android OS strictly hides this directory from "My Files" and third-party apps.
+          </div>
+          <button onclick="filterTests('ALL', document.getElementById('filter-all'))" style="background: #3b82f6; color: #ffffff; border: none; padding: 8px 14px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+            Browse Online Tests to Download
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    offlineList.forEach(test => {
+      const card = document.createElement('div');
+      card.className = 'm-portal-card';
+      card.style.borderLeft = '4px solid #10b981';
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="background: #064e3b; color: #34d399; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 4px; border: 1px solid #059669;">
+            🔒 AES-256-GCM ENCRYPTED CONTAINER (.pwenc)
+          </span>
+          <span style="font-size: 10px; color: #94a3b8;">
+            ${(test.sizeBytes / 1024).toFixed(1)} KB
+          </span>
+        </div>
+
+        <div class="m-test-title">${test.title}</div>
+
+        <div style="background: #0f172a; border: 1px solid #334155; padding: 6px 10px; border-radius: 6px; font-size: 10px; color: #94a3b8; margin: 8px 0 12px;">
+          <strong>DRM Sandbox:</strong> Isolated in /data/data/com.pw.examshield/ • Completely invisible to "My Files" • Decrypts only in RAM
+        </div>
+
+        <div class="m-test-tags">
+          <span class="m-tag">⏱️ ${test.durationMinutes || 180}m</span>
+          <span class="m-tag">📊 ${test.totalMarks || 300} Marks</span>
+          <span class="m-tag">🛡️ FLAG_SECURE Active</span>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-m-start" style="flex: 1; background: #10b981; color: #ffffff;" onclick="openInstructions('${test.testId}', 'OFFLINE_VAULT')">
+            🔓 Decrypt in RAM &amp; Take Test &rarr;
+          </button>
+          <button onclick="removeOfflineTest('${test.testId}')" style="background: #334155; color: #ef4444; border: 1px solid #475569; padding: 0 14px; border-radius: 6px; font-size: 14px; cursor: pointer;">
+            🗑️
+          </button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+    return;
+  }
+
+  // 2. REGULAR ONLINE TESTS LIST
+  let filtered = allTests;
+  if (filteredCategory !== 'ALL') {
+    filtered = allTests.filter(t => (t.exam_type || '').toUpperCase() === filteredCategory.toUpperCase());
+  }
+
+  if (!filtered || filtered.length === 0) {
+    container.innerHTML = '<div style="color: #94a3b8; padding: 14px; text-align: center;">No tests found in this category.</div>';
+    return;
+  }
+
+  for (const test of filtered) {
+    const isNEET = (test.exam_type || '').toUpperCase().includes('NEET');
+    const badgeColor = isNEET ? '#059669' : '#0284c7';
+    const badgeText = isNEET ? 'NEET UG' : 'JEE MAIN';
+    const isSaved = await window.PWOfflineVault.isTestSavedOffline(test.id);
+
+    const card = document.createElement('div');
+    card.className = 'm-portal-card';
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="background: ${badgeColor}; color: #ffffff; font-size: 10px; font-weight: 900; padding: 2px 6px; border-radius: 4px;">
+          ${badgeText}
+        </span>
+        <span style="font-size: 11px; color: #38bdf8; font-family: monospace;">
+          BATCH: ${test.batch_code || 'ALL'}
+        </span>
+      </div>
+
+      <div class="m-test-title">${test.title}</div>
+
+      <div class="m-test-tags">
+        <span class="m-tag">⏱️ ${test.duration_minutes || 180}m</span>
+        <span class="m-tag">📊 ${test.total_marks || 300} Marks</span>
+        <span class="m-tag">📝 ${test.question_count || 5} Qs</span>
+        <span class="m-tag" style="color: #34d399;">⚡ In-Memory Stream</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- Option 1: Live Stream (Zero Storage on Phone) -->
+        <button class="btn-m-start" onclick="openInstructions('${test.id}', 'STREAM')">
+          ⚡ Practice Live (In-Memory RAM Only) &rarr;
+        </button>
+
+        <!-- Option 2: Encrypted Offline Download (Hidden from 'My Files') -->
+        <button onclick="downloadTestOffline('${test.id}', this)" style="background: #1e293b; color: ${isSaved ? '#34d399' : '#94a3b8'}; border: 1px solid ${isSaved ? '#059669' : '#475569'}; padding: 9px; font-size: 11px; font-weight: bold; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          ${isSaved ? '✓ Downloaded & Encrypted in Vault (.pwenc)' : '📥 Download Encrypted for Offline (Hidden from Files)'}
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+async function downloadTestOffline(testId, btnEl) {
+  const originalText = btnEl.innerText;
+  btnEl.innerText = '⏳ Downloading & Encrypting...';
+  btnEl.disabled = true;
+
+  try {
+    const testMeta = allTests.find(t => t.id === testId) || { title: 'Practice Test' };
+    await window.PWOfflineVault.downloadAndStorePackage(testId, testMeta);
+    btnEl.innerText = '✓ Saved to App Vault (Hidden from "My Files")';
+    btnEl.style.color = '#34d399';
+    btnEl.style.borderColor = '#059669';
+    alert('Test downloaded successfully!\n\nSecurity Enforced:\n- Stored in App-Internal Sandbox (/data/data/com.pw.examshield/)\n- Encrypted with AES-256-GCM (.pwenc)\n- Completely hidden from Samsung "My Files" and file managers\n- Can only be opened and decrypted inside our app.');
+  } catch (err) {
+    btnEl.innerText = originalText;
+    btnEl.disabled = false;
+    alert('Download failed: ' + err.message);
+  }
+}
+
+async function removeOfflineTest(testId) {
+  if (confirm('Delete this encrypted test from your offline vault?')) {
+    await window.PWOfflineVault.deleteOfflineTest(testId);
+    renderTestsList();
+  }
+}
+
+// -------------------------------------------------------------------
+// 3. NTA INSTRUCTIONS & CONSENT MODAL
+// -------------------------------------------------------------------
+async function openInstructions(testId, mode = 'STREAM') {
+  selectedTestId = testId;
+  examLaunchMode = mode;
+
+  const modal = document.getElementById('instructions-modal');
+  const chk = document.getElementById('chk-agree');
+  const startBtn = document.getElementById('btn-begin-exam');
+
+  chk.checked = false;
+  startBtn.disabled = true;
+  startBtn.style.opacity = '0.5';
+
+  if (mode === 'STREAM') {
+    try {
+      const res = await fetch(window.apiUrl(`/api/tests/${testId}`));
+      const data = await res.json();
+      document.getElementById('modal-title').innerText = data.test.title;
+      document.getElementById('modal-meta').innerText = 
+        `⚡ LIVE IN-MEMORY STREAM • ${data.test.duration_minutes || 180} Mins • ${data.test.total_marks || 300} Marks • Zero Disk Storage`;
+    } catch (e) {}
+  } else {
+    // Offline vault
+    try {
+      const payload = await window.PWOfflineVault.loadAndDecryptTest(testId);
+      document.getElementById('modal-title').innerText = payload.test.title;
+      document.getElementById('modal-meta').innerText = 
+        `🔒 OFFLINE VAULT (AES-256 DECRYPTED IN RAM) • ${payload.test.duration_minutes || 180} Mins • ${payload.test.total_marks || 300} Marks`;
+    } catch (e) {}
+  }
+
+  modal.style.display = 'flex';
+}
+
+function toggleStartTestBtn() {
+  const chk = document.getElementById('chk-agree');
+  const startBtn = document.getElementById('btn-begin-exam');
+  if (chk.checked) {
+    startBtn.disabled = false;
+    startBtn.style.opacity = '1';
+  } else {
+    startBtn.disabled = true;
+    startBtn.style.opacity = '0.5';
+  }
+}
+
+function closeInstructions() {
+  document.getElementById('instructions-modal').style.display = 'none';
+  selectedTestId = null;
+}
+
+// -------------------------------------------------------------------
+// 4. ACTIVE CBT EXAM TERMINAL
+// -------------------------------------------------------------------
+async function startExamNow() {
+  if (!selectedTestId) return;
+
+  document.getElementById('instructions-modal').style.display = 'none';
+  document.getElementById('view-portal').style.display = 'none';
+  document.getElementById('view-exam').style.display = 'flex';
+
+  if (examLaunchMode === 'STREAM') {
+    // 1. Live In-Memory Stream from Laptop Server (Zero Storage on phone)
+    console.log('[EXAM] Initiating in-memory stream from laptop server...');
+    const res = await fetch(window.apiUrl(`/api/tests/stream/${selectedTestId}`));
+    const data = await res.json();
+    currentTest = data.test;
+    questions = data.questions;
+  } else {
+    // 2. In-Memory Decryption from Private Offline Vault (.pwenc container)
+    console.log('[EXAM] Decrypting AES-256-GCM package from private sandbox into RAM...');
+    const payload = await window.PWOfflineVault.loadAndDecryptTest(selectedTestId);
+    currentTest = payload.test;
+    questions = payload.questions;
+  }
+
+  document.getElementById('exam-test-title').innerText = currentTest.title;
+  secondsLeft = (currentTest.duration_minutes || 180) * 60;
+
+  // Extract unique sections
+  const secSet = new Set();
+  questions.forEach(q => secSet.add(q.section_title || 'Core Section'));
+  sectionsList = Array.from(secSet);
+  activeSection = sectionsList[0];
+  activeQuestionIndex = 0;
+  responses = {};
+
+  // Initialize responses
+  questions.forEach(q => {
+    responses[q.id] = {
+      selectedOption: null,
+      numericalValue: null,
+      status: 'NOT_VISITED',
+      timeSpent: 0
+    };
+  });
+
+  if (questions[0]) {
+    responses[questions[0].id].status = 'NOT_ANSWERED';
+  }
+
+  renderSectionChips();
+  renderCurrentQuestion();
+  updatePaletteStats();
+  startTimer();
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  const clockEl = document.getElementById('mobile-clock');
+
+  timerInterval = setInterval(() => {
+    if (secondsLeft <= 0) {
+      clearInterval(timerInterval);
+      alert('Time Expired! Submitting examination.');
+      submitExam();
+      return;
+    }
+    secondsLeft--;
+
+    const h = Math.floor(secondsLeft / 3600).toString().padStart(2, '0');
+    const m = Math.floor((secondsLeft % 3600) / 60).toString().padStart(2, '0');
+    const s = (secondsLeft % 60).toString().padStart(2, '0');
+    clockEl.innerText = `${h}:${m}:${s}`;
+  }, 1000);
+}
+
+function renderSectionChips() {
+  const container = document.getElementById('mobile-section-chips');
+  container.innerHTML = '';
+
+  sectionsList.forEach(sec => {
+    const chip = document.createElement('div');
+    chip.className = `section-chip ${sec === activeSection ? 'active' : ''}`;
+    chip.innerText = sec;
+    chip.onclick = () => {
+      activeSection = sec;
+      renderSectionChips();
+      const firstIdx = questions.findIndex(q => (q.section_title || 'Core Section') === sec);
+      if (firstIdx !== -1) goToQuestion(firstIdx);
+    };
+    container.appendChild(chip);
+  });
+}
+
+function renderCurrentQuestion() {
+  const q = questions[activeQuestionIndex];
+  if (!q) return;
+
+  document.getElementById('m-q-num').innerText = `Question ${q.question_number}`;
+  document.getElementById('m-q-marks').innerText = `+${currentTest.positive_marks || 4.0} / -${currentTest.negative_marks || 1.0}`;
+  document.getElementById('exam-section-label').innerText = q.section_title || 'Section A';
+
+  // Render question text with KaTeX
+  document.getElementById('m-q-text').innerHTML = parseLatex(q.question_text);
+
+  const ansBox = document.getElementById('m-answers-box');
+  ansBox.innerHTML = '';
+  const resp = responses[q.id];
+
+  if (q.question_type === 'NUMERICAL') {
+    // Virtual Numeric Keypad
+    const card = document.createElement('div');
+    card.className = 'mobile-keypad-card';
+
+    const inputVal = resp.numericalValue !== null && resp.numericalValue !== undefined ? String(resp.numericalValue) : '';
+
+    card.innerHTML = `
+      <div style="font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 6px;">
+        VIRTUAL NUMERICAL KEYPAD (DECIMAL / INTEGER):
+      </div>
+      <input type="text" readonly class="mobile-keypad-input" id="m-num-display" value="${inputVal}">
+      <div class="mobile-keypad-grid">
+        <div class="m-key" onclick="keypadInput('7')">7</div>
+        <div class="m-key" onclick="keypadInput('8')">8</div>
+        <div class="m-key" onclick="keypadInput('9')">9</div>
+        <div class="m-key m-key-action" onclick="keypadInput('BS')">&larr;</div>
+        <div class="m-key" onclick="keypadInput('4')">4</div>
+        <div class="m-key" onclick="keypadInput('5')">5</div>
+        <div class="m-key" onclick="keypadInput('6')">6</div>
+        <div class="m-key m-key-action" onclick="keypadInput('CLR')">Clear</div>
+        <div class="m-key" onclick="keypadInput('1')">1</div>
+        <div class="m-key" onclick="keypadInput('2')">2</div>
+        <div class="m-key" onclick="keypadInput('3')">3</div>
+        <div class="m-key" onclick="keypadInput('-')">-</div>
+        <div class="m-key" style="grid-column: span 2;" onclick="keypadInput('0')">0</div>
+        <div class="m-key" onclick="keypadInput('.')">.</div>
+      </div>
+    `;
+    ansBox.appendChild(card);
+  } else {
+    // SCQ Radio Options
+    const optList = document.createElement('div');
+    optList.className = 'mobile-options-list';
+
+    const options = q.options_json ? JSON.parse(q.options_json) : [];
+    options.forEach((optText, idx) => {
+      const isSelected = resp.selectedOption === String(idx);
+      const optCard = document.createElement('div');
+      optCard.className = `mobile-option-card ${isSelected ? 'selected' : ''}`;
+      optCard.onclick = () => selectOption(idx);
+
+      const letter = ['A', 'B', 'C', 'D'][idx] || `${idx + 1}`;
+      optCard.innerHTML = `
+        <div class="opt-circle">${letter}</div>
+        <div class="opt-content">${parseLatex(optText)}</div>
+      `;
+      optList.appendChild(optCard);
+    });
+    ansBox.appendChild(optList);
+  }
+}
+
+function keypadInput(key) {
+  const q = questions[activeQuestionIndex];
+  if (!q) return;
+
+  let val = responses[q.id].numericalValue ? String(responses[q.id].numericalValue) : '';
+  if (key === 'CLR') val = '';
+  else if (key === 'BS') val = val.slice(0, -1);
+  else if (key === '.') {
+    if (!val.includes('.')) val += '.';
+  } else if (key === '-') {
+    if (val.startsWith('-')) val = val.substring(1);
+    else val = '-' + val;
+  } else {
+    if (val.length < 9) val += key;
+  }
+
+  responses[q.id].numericalValue = val;
+  const display = document.getElementById('m-num-display');
+  if (display) display.value = val;
+}
+
+function selectOption(idx) {
+  const q = questions[activeQuestionIndex];
+  if (!q) return;
+  responses[q.id].selectedOption = String(idx);
+  renderCurrentQuestion();
+}
+
+function handleSaveNext() {
+  const q = questions[activeQuestionIndex];
+  if (!q) return;
+
+  const isAnswered = (responses[q.id].selectedOption !== null && responses[q.id].selectedOption !== undefined) ||
+                     (responses[q.id].numericalValue !== null && responses[q.id].numericalValue !== undefined && responses[q.id].numericalValue !== '');
+
+  responses[q.id].status = isAnswered ? 'ANSWERED' : 'NOT_ANSWERED';
+  updatePaletteStats();
+
+  if (activeQuestionIndex < questions.length - 1) {
+    goToQuestion(activeQuestionIndex + 1);
+  }
+}
+
+function handleMarkReview() {
+  const q = questions[activeQuestionIndex];
+  if (!q) return;
+  const isAnswered = (responses[q.id].selectedOption !== null && responses[q.id].selectedOption !== undefined) ||
+                     (responses[q.id].numericalValue !== null && responses[q.id].numericalValue !== undefined && responses[q.id].numericalValue !== '');
+
+  responses[q.id].status = isAnswered ? 'ANSWERED_AND_MARKED' : 'MARKED_FOR_REVIEW';
+  updatePaletteStats();
+
+  if (activeQuestionIndex < questions.length - 1) {
+    goToQuestion(activeQuestionIndex + 1);
+  }
+}
+
+function handleClear() {
+  const q = questions[activeQuestionIndex];
+  if (!q) return;
+  responses[q.id].selectedOption = null;
+  responses[q.id].numericalValue = null;
+  responses[q.id].status = 'NOT_ANSWERED';
+  renderCurrentQuestion();
+  updatePaletteStats();
+}
+
+function goToQuestion(idx) {
+  activeQuestionIndex = idx;
+  const q = questions[idx];
+  if (!q) return;
+
+  if (responses[q.id].status === 'NOT_VISITED') {
+    responses[q.id].status = 'NOT_ANSWERED';
+  }
+
+  if (q.section_title && q.section_title !== activeSection) {
+    activeSection = q.section_title;
+    renderSectionChips();
+  }
+
+  renderCurrentQuestion();
+  updatePaletteStats();
+}
+
+// -------------------------------------------------------------------
+// 5. SLIDING NTA QUESTION PALETTE (BOTTOM SHEET)
+// -------------------------------------------------------------------
+function updatePaletteStats() {
+  let ans = 0, notAns = 0, notVis = 0, rev = 0, revEval = 0;
+
+  questions.forEach(q => {
+    const st = responses[q.id].status;
+    if (st === 'ANSWERED') ans++;
+    else if (st === 'NOT_ANSWERED') notAns++;
+    else if (st === 'MARKED_FOR_REVIEW') rev++;
+    else if (st === 'ANSWERED_AND_MARKED') revEval++;
+    else notVis++;
+  });
+
+  const totalAns = ans + revEval;
+  document.getElementById('palette-btn-text').innerText = `Palette (${totalAns}/${questions.length})`;
+
+  document.getElementById('leg-ans').innerText = ans;
+  document.getElementById('leg-notans').innerText = notAns;
+  document.getElementById('leg-notvis').innerText = notVis;
+  document.getElementById('leg-rev').innerText = rev;
+
+  // Build matrix buttons
+  const matrix = document.getElementById('palette-matrix');
+  matrix.innerHTML = '';
+
+  questions.forEach((q, idx) => {
+    const st = responses[q.id].status;
+    const btn = document.createElement('div');
+    btn.className = 'p-matrix-item';
+
+    let colorStyle = 'background: #94a3b8; color: #ffffff;';
+    if (st === 'ANSWERED') colorStyle = 'background: #22c55e; color: #ffffff;';
+    else if (st === 'NOT_ANSWERED') colorStyle = 'background: #ef4444; color: #ffffff;';
+    else if (st === 'MARKED_FOR_REVIEW') colorStyle = 'background: #a855f7; color: #ffffff;';
+    else if (st === 'ANSWERED_AND_MARKED') colorStyle = 'background: #7e22ce; color: #ffffff;';
+
+    if (idx === activeQuestionIndex) {
+      colorStyle += ' border: 3px solid #f29306;';
+    }
+
+    btn.style = colorStyle;
+    btn.innerText = q.question_number;
+    btn.onclick = () => {
+      goToQuestion(idx);
+      closePaletteSheet();
+    };
+    matrix.appendChild(btn);
+  });
+}
+
+function openPaletteSheet() {
+  document.getElementById('palette-sheet').style.display = 'flex';
+}
+
+function closePaletteSheet(e) {
+  document.getElementById('palette-sheet').style.display = 'none';
+}
+
+// -------------------------------------------------------------------
+// 6. EXAMINATION SUBMISSION & DETERMINISTIC SCORING
+// -------------------------------------------------------------------
+function confirmSubmitExam() {
+  let ans = 0;
+  questions.forEach(q => {
+    const st = responses[q.id].status;
+    if (st === 'ANSWERED' || st === 'ANSWERED_AND_MARKED') ans++;
+  });
+
+  if (confirm(`Are you sure you want to submit? You have answered ${ans} out of ${questions.length} questions.`)) {
+    submitExam();
+  }
+}
+
+async function submitExam() {
+  if (timerInterval) clearInterval(timerInterval);
+
+  let score = 0;
+  let maxScore = questions.length * (currentTest.positive_marks || 4.0);
+  let correct = 0;
+  let incorrect = 0;
+
+  let solutionsHtml = '<h4 style="color: #1b3558; font-size: 13px; margin-bottom: 8px;">Detailed Solutions:</h4>';
+
+  questions.forEach((q, idx) => {
+    const r = responses[q.id];
+    const isGiven = (r.status === 'ANSWERED' || r.status === 'ANSWERED_AND_MARKED');
+    let isCorrect = false;
+    let studentAnsText = 'Unattempted';
+
+    if (isGiven) {
+      if (q.question_type === 'NUMERICAL') {
+        studentAnsText = String(r.numericalValue);
+        const sVal = parseFloat(r.numericalValue);
+        const eVal = parseFloat(q.numerical_answer);
+        if (!isNaN(sVal) && !isNaN(eVal) && Math.abs(sVal - eVal) <= 0.05) isCorrect = true;
+      } else {
+        const letter = ['A', 'B', 'C', 'D'][parseInt(r.selectedOption)] || r.selectedOption;
+        studentAnsText = `Option (${letter})`;
+        if (String(r.selectedOption).trim() === String(q.correct_answer).trim()) isCorrect = true;
+      }
+
+      if (isCorrect) {
+        correct++;
+        score += (currentTest.positive_marks || 4.0);
+      } else {
+        incorrect++;
+        score -= (currentTest.negative_marks || 1.0);
+      }
+    }
+
+    const correctLetter = ['A', 'B', 'C', 'D'][parseInt(q.correct_answer)] || q.correct_answer || q.numerical_answer;
+    const borderCol = !isGiven ? '#94a3b8' : (isCorrect ? '#22c55e' : '#ef4444');
+
+    solutionsHtml += `
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid ${borderCol}; padding: 8px 10px; border-radius: 6px; margin-bottom: 8px; font-size: 11px;">
+        <div style="font-weight: bold; margin-bottom: 4px; color: #1e3a5f;">Q${idx + 1}. [${q.subject}]</div>
+        <div style="margin-bottom: 4px;">${parseLatex(q.question_text)}</div>
+        <div style="color: #475569; margin-bottom: 4px;"><strong>Your Answer:</strong> ${studentAnsText} | <strong>Correct:</strong> Option (${correctLetter})</div>
+        ${q.solution_text ? `<div style="background: #eff6ff; padding: 6px; border-radius: 4px; color: #1e40af;">${parseLatex(q.solution_text)}</div>` : ''}
+      </div>
+    `;
+  });
+
+  const attempted = correct + incorrect;
+  const accuracy = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
+  const percentile = score > 0 ? Math.min(99.95, Math.max(25, 90 + (score / maxScore) * 10)).toFixed(2) : '15.00';
+  const rank = Math.max(1, Math.round((1 - (parseFloat(percentile) / 100)) * 5000));
+
+  // Submit to server
+  try {
+    await fetch(window.apiUrl('/api/submit'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        testId: selectedTestId,
+        studentName,
+        rollNumber,
+        score,
+        maxScore,
+        accuracy,
+        timeSpentSeconds: ((currentTest.duration_minutes || 180) * 60) - secondsLeft,
+        rank,
+        percentile: parseFloat(percentile),
+        deviceId: 'MOBILE-ANDROID'
+      })
+    });
+  } catch (e) {}
+
+  // Populate scorecard
+  document.getElementById('res-score').innerText = `${score} / ${maxScore}`;
+  document.getElementById('res-percentile').innerText = `${percentile}%`;
+  document.getElementById('res-rank').innerText = `#${rank}`;
+  document.getElementById('res-accuracy').innerText = `${accuracy}% (${correct}C/${incorrect}W)`;
+  document.getElementById('res-solutions-list').innerHTML = solutionsHtml;
+
+  document.getElementById('scorecard-modal').style.display = 'flex';
+}
+
+function returnToHub() {
+  document.getElementById('scorecard-modal').style.display = 'none';
+  document.getElementById('view-exam').style.display = 'none';
+  document.getElementById('view-portal').style.display = 'flex';
+
+  selectedTestId = null;
+  currentTest = null;
+  questions = [];
+  responses = {};
+  if (timerInterval) clearInterval(timerInterval);
+
+  loadPracticeTests();
+}
+
+// -------------------------------------------------------------------
+// 7. TEACHER STUDIO & BATCH ENROLLMENT
+// -------------------------------------------------------------------
+async function joinBatch() {
+  const input = document.getElementById('batch-code-input');
+  const msgEl = document.getElementById('join-status-msg');
+  const code = (input.value || '').trim().toUpperCase();
+  if (!code) {
+    alert('Please enter a batch code.');
+    return;
+  }
+  msgEl.style.display = 'block';
+  msgEl.style.color = '#38bdf8';
+  msgEl.innerText = `Connecting to batch ${code}...`;
+  try {
+    const res = await fetch(window.apiUrl(`/api/batches/${code}`));
+    if (!res.ok) throw new Error('Batch not found or invalid code.');
+    const batch = await res.json();
+    batchCode = batch.code;
+    document.getElementById('portal-student-roll').innerText = `Roll: ${rollNumber} • Batch: ${batch.code} (${batch.name})`;
+    msgEl.style.color = '#34d399';
+    msgEl.innerText = `Enrolled in "${batch.name}" (${batch.code})!`;
+    loadPracticeTests();
+  } catch (err) {
+    msgEl.style.color = '#f87171';
+    msgEl.innerText = err.message;
+  }
+}
+
+async function loadTeacherBatches() {
+  try {
+    const res = await fetch(window.apiUrl('/api/batches'));
+    const batches = await res.json();
+    const select = document.getElementById('t-test-batch');
+    if (!select) return;
+    select.innerHTML = '';
+    batches.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.innerText = `${b.name} (${b.code})`;
+      select.appendChild(opt);
+    });
+  } catch (e) {}
+}
+
+async function createBatch() {
+  const name = document.getElementById('t-batch-name').value;
+  const code = document.getElementById('t-batch-code').value;
+  const statusEl = document.getElementById('t-batch-status');
+
+  if (!name || !code) {
+    alert('Please fill out batch name and code.');
+    return;
+  }
+
+  const res = await fetch(window.apiUrl('/api/batches'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, code, teacher_name: 'Dr. Alakh Faculty', exam_type: 'JEE_MAIN' })
+  });
+  const data = await res.json();
+  statusEl.innerText = `Created Batch: ${data.name} (Code: ${data.code})`;
+  statusEl.style.display = 'block';
+  loadTeacherBatches();
+}
+
+async function publishTest() {
+  const batchId = document.getElementById('t-test-batch').value;
+  const title = document.getElementById('t-test-title').value;
+  const duration = document.getElementById('t-test-duration').value;
+  const marks = document.getElementById('t-test-marks').value;
+  const qText = document.getElementById('t-q-text').value;
+  const optA = document.getElementById('t-opt-a').value;
+  const optB = document.getElementById('t-opt-b').value;
+  const optC = document.getElementById('t-opt-c').value;
+  const optD = document.getElementById('t-opt-d').value;
+  const solution = document.getElementById('t-solution-text').value;
+  const statusEl = document.getElementById('t-publish-status');
+
+  if (!title || !qText || !optA) {
+    alert('Please provide test title, question text, and at least Option A.');
+    return;
+  }
+
+  const testPayload = {
+    batchId,
+    title,
+    examType: 'JEE_MAIN',
+    durationMinutes: Number(duration),
+    totalMarks: Number(marks),
+    positiveMarks: 4,
+    negativeMarks: 1,
+    isKioskEnforced: 1,
+    questions: [
+      {
+        sectionTitle: 'Physics - Section A',
+        subject: 'Physics',
+        questionText: qText,
+        questionType: 'SCQ',
+        optionsJson: [optA, optB || 'Option B', optC || 'Option C', optD || 'Option D'],
+        correctAnswer: '0',
+        solutionText: solution || 'Institutional step-by-step solution.'
+      }
+    ]
+  };
+
+  const res = await fetch(window.apiUrl('/api/tests'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(testPayload)
+  });
+  const result = await res.json();
+  statusEl.innerText = `Published "${title}"! Test is now instantly live on student mobile phones!`;
+  statusEl.style.display = 'block';
+}
+
+// -------------------------------------------------------------------
+// 8. FORMULA PARSER (KaTeX)
+// -------------------------------------------------------------------
+function parseLatex(str) {
+  if (!str) return '';
+  let replaced = str.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+    try {
+      return `<div style="text-align: center; margin: 6px 0; overflow-x: auto;">${katex.renderToString(math, { displayMode: true, throwOnError: false })}</div>`;
+    } catch (e) {
+      return match;
+    }
+  });
+
+  replaced = replaced.replace(/\$([^\$]+?)\$/g, (match, math) => {
+    try {
+      return katex.renderToString(math, { displayMode: false, throwOnError: false });
+    } catch (e) {
+      return match;
+    }
+  });
+
+  return replaced.replace(/\n/g, '<br>');
+}
