@@ -36,10 +36,28 @@ function initCandidateProfile() {
 function updateProfileDisplay() {
   const nameEl = document.getElementById('portal-student-name');
   const rollEl = document.getElementById('portal-student-roll');
+  const avatarEl = document.getElementById('portal-avatar');
   const examStudentLabel = document.getElementById('exam-student-label');
-  if (nameEl) nameEl.innerText = studentName || 'Candidate';
-  if (rollEl) rollEl.innerText = `Roll: ${rollNumber || 'Not set'} • Batch: ${batchCode}`;
-  if (examStudentLabel) examStudentLabel.innerText = studentName || 'Candidate';
+  const examAvatarEl = document.getElementById('exam-user-avatar');
+
+  const displayName = studentName || 'Candidate';
+  const targetExam = localStorage.getItem('PW_STUDENT_TARGET') || 'Target: JEE 2026';
+
+  if (nameEl) nameEl.innerText = displayName;
+  if (rollEl) rollEl.innerText = `Roll: ${rollNumber || 'Not set'} • ${targetExam}`;
+  if (examStudentLabel) examStudentLabel.innerText = displayName;
+
+  // Compute initials for avatar (e.g. Vivek Sharma -> VS)
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map(p => p[0].toUpperCase())
+    .slice(0, 2)
+    .join('') || 'PW';
+
+  if (avatarEl) avatarEl.innerText = initials;
+  if (examAvatarEl) examAvatarEl.innerText = initials;
+
   setupWatermark();
 }
 
@@ -48,6 +66,9 @@ function openProfileModal() {
   if (modal) {
     document.getElementById('prof-name-input').value = studentName;
     document.getElementById('prof-roll-input').value = rollNumber;
+    const targetSelect = document.getElementById('prof-target-select');
+    const savedTarget = localStorage.getItem('PW_STUDENT_TARGET');
+    if (targetSelect && savedTarget) targetSelect.value = savedTarget;
     modal.style.display = 'flex';
   }
 }
@@ -60,6 +81,9 @@ function closeProfileModal() {
 function saveCandidateProfile() {
   const name = (document.getElementById('prof-name-input').value || '').trim();
   const roll = (document.getElementById('prof-roll-input').value || '').trim();
+  const targetSelect = document.getElementById('prof-target-select');
+  const target = targetSelect ? targetSelect.value : 'Target: JEE 2026';
+
   if (!name || !roll) {
     alert('Please enter your full name and mobile or roll number.');
     return;
@@ -68,6 +92,7 @@ function saveCandidateProfile() {
   rollNumber = roll;
   localStorage.setItem('PW_STUDENT_NAME', name);
   localStorage.setItem('PW_STUDENT_ROLL', roll);
+  localStorage.setItem('PW_STUDENT_TARGET', target);
   closeProfileModal();
   updateProfileDisplay();
 }
@@ -191,6 +216,7 @@ function filterTests(category, btn) {
 
 async function renderTestsList() {
   const container = document.getElementById('practice-tests-container');
+  if (!container) return;
   container.innerHTML = '';
 
   // 1. OFFLINE VAULT VIEW (ENCRYPTED TESTS HIDDEN FROM 'MY FILES')
@@ -198,13 +224,13 @@ async function renderTestsList() {
     const offlineList = await window.PWOfflineVault.listOfflineTests();
     if (!offlineList || offlineList.length === 0) {
       container.innerHTML = `
-        <div style="background: #1e293b; border: 1px dashed #475569; border-radius: 8px; padding: 24px; text-align: center;">
-          <div style="font-size: 28px; margin-bottom: 8px;">🔒</div>
-          <div style="font-weight: bold; color: #ffffff; margin-bottom: 4px;">Offline Vault is Empty</div>
-          <div style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin-bottom: 12px;">
-            Tests downloaded for offline practice are stored in the app's internal private sandbox, encrypted with AES-256-GCM. Android OS strictly hides this directory from "My Files" and third-party apps.
+        <div style="background: var(--pw-surface-card); border: 1.5px dashed var(--pw-border-highlight); border-radius: var(--radius-lg); padding: 32px 20px; text-align: center;">
+          <div style="font-size: 32px; margin-bottom: 12px;">🔒</div>
+          <div style="font-size: 15px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">Offline Vault is Empty</div>
+          <div style="font-size: 12px; color: var(--pw-text-muted); line-height: 1.6; margin-bottom: 18px; max-width: 320px; margin-left: auto; margin-right: auto;">
+            Mock tests downloaded for offline revision are encrypted with AES-256-GCM and stored inside the app-internal sandbox. Android OS strictly hides them from Samsung "My Files".
           </div>
-          <button onclick="filterTests('ALL', document.getElementById('filter-all'))" style="background: #3b82f6; color: #ffffff; border: none; padding: 8px 14px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+          <button onclick="filterTests('ALL', document.getElementById('filter-all'))" class="btn-m-start" style="display: inline-flex; width: auto; padding: 10px 20px; font-size: 13px;">
             Browse Online Tests to Download
           </button>
         </div>
@@ -217,32 +243,42 @@ async function renderTestsList() {
       card.className = 'm-portal-card';
       card.style.borderLeft = '4px solid #10b981';
       card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="background: #064e3b; color: #34d399; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 4px; border: 1px solid #059669;">
-            🔒 AES-256-GCM ENCRYPTED CONTAINER (.pwenc)
+        <div class="pw-card-badge-row">
+          <span class="pw-tag-exam" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+            🔒 AES-256 ENCRYPTED VAULT (.pwenc)
           </span>
-          <span style="font-size: 10px; color: #94a3b8;">
+          <span class="pw-tag-batch">
             ${(test.sizeBytes / 1024).toFixed(1)} KB
           </span>
         </div>
 
         <div class="m-test-title">${test.title}</div>
 
-        <div style="background: #0f172a; border: 1px solid #334155; padding: 6px 10px; border-radius: 6px; font-size: 10px; color: #94a3b8; margin: 8px 0 12px;">
-          <strong>DRM Sandbox:</strong> Isolated in /data/data/com.pw.examshield/ • Completely invisible to "My Files" • Decrypts only in RAM
+        <div style="background: rgba(11, 15, 25, 0.6); border: 1px solid var(--pw-border); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 11px; color: var(--pw-text-muted); margin-bottom: 14px; line-height: 1.5;">
+          <strong style="color: #34d399;">Sandbox Protected:</strong> Stored in private app storage. Invisible in "My Files". Decrypts strictly into phone RAM for examination.
         </div>
 
-        <div class="m-test-tags">
-          <span class="m-tag">⏱️ ${test.durationMinutes || 180}m</span>
-          <span class="m-tag">📊 ${test.totalMarks || 300} Marks</span>
-          <span class="m-tag">🛡️ FLAG_SECURE Active</span>
+        <div class="pw-test-stats-grid">
+          <div class="pw-stat-item">
+            <span class="pw-stat-label">Duration</span>
+            <span class="pw-stat-val">⏱️ ${test.durationMinutes || 180}m</span>
+          </div>
+          <div class="pw-stat-item">
+            <span class="pw-stat-label">Total Marks</span>
+            <span class="pw-stat-val">📊 ${test.totalMarks || 300}M</span>
+          </div>
+          <div class="pw-stat-item">
+            <span class="pw-stat-label">Security</span>
+            <span class="pw-stat-val" style="color: #34d399;">🛡️ SECURE</span>
+          </div>
         </div>
 
         <div style="display: flex; gap: 8px;">
-          <button class="btn-m-start" style="flex: 1; background: #10b981; color: #ffffff;" onclick="openInstructions('${test.testId}', 'OFFLINE_VAULT')">
-            🔓 Decrypt in RAM &amp; Take Test &rarr;
+          <button class="btn-m-start" style="flex: 1; background: var(--pw-green-gradient);" onclick="openInstructions('${test.testId}', 'OFFLINE_VAULT')">
+            <span>🔓 Decrypt &amp; Take Test</span>
+            <span>&rarr;</span>
           </button>
-          <button onclick="removeOfflineTest('${test.testId}')" style="background: #334155; color: #ef4444; border: 1px solid #475569; padding: 0 14px; border-radius: 6px; font-size: 14px; cursor: pointer;">
+          <button onclick="removeOfflineTest('${test.testId}')" class="btn-pw-offline" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); padding: 0 16px;">
             🗑️
           </button>
         </div>
@@ -259,46 +295,55 @@ async function renderTestsList() {
   }
 
   if (!filtered || filtered.length === 0) {
-    container.innerHTML = '<div style="color: #94a3b8; padding: 14px; text-align: center;">No tests found in this category.</div>';
+    container.innerHTML = '<div style="color: var(--pw-text-muted); padding: 30px; text-align: center; font-size: 13px;">No tests found in this category.</div>';
     return;
   }
 
   for (const test of filtered) {
     const isNEET = (test.exam_type || '').toUpperCase().includes('NEET');
-    const badgeColor = isNEET ? '#059669' : '#0284c7';
-    const badgeText = isNEET ? 'NEET UG' : 'JEE MAIN';
+    const badgeClass = isNEET ? 'pw-tag-neet' : 'pw-tag-jee';
+    const badgeText = isNEET ? 'NEET UG 2026' : 'JEE MAIN 2026';
     const isSaved = await window.PWOfflineVault.isTestSavedOffline(test.id);
 
     const card = document.createElement('div');
     card.className = 'm-portal-card';
     card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="background: ${badgeColor}; color: #ffffff; font-size: 10px; font-weight: 900; padding: 2px 6px; border-radius: 4px;">
+      <div class="pw-card-badge-row">
+        <span class="pw-tag-exam ${badgeClass}">
           ${badgeText}
         </span>
-        <span style="font-size: 11px; color: #38bdf8; font-family: monospace;">
-          BATCH: ${test.batch_code || 'ALL'}
+        <span class="pw-tag-batch">
+          BATCH: ${test.batch_code || 'ALL BATCHES'}
         </span>
       </div>
 
       <div class="m-test-title">${test.title}</div>
 
-      <div class="m-test-tags">
-        <span class="m-tag">⏱️ ${test.duration_minutes || 180}m</span>
-        <span class="m-tag">📊 ${test.total_marks || 300} Marks</span>
-        <span class="m-tag">📝 ${test.question_count || 5} Qs</span>
-        <span class="m-tag" style="color: #34d399;">⚡ In-Memory Stream</span>
+      <div class="pw-test-stats-grid">
+        <div class="pw-stat-item">
+          <span class="pw-stat-label">Duration</span>
+          <span class="pw-stat-val">⏱️ ${test.duration_minutes || 180}m</span>
+        </div>
+        <div class="pw-stat-item">
+          <span class="pw-stat-label">Marks</span>
+          <span class="pw-stat-val">📊 ${test.total_marks || 300}M</span>
+        </div>
+        <div class="pw-stat-item">
+          <span class="pw-stat-label">Questions</span>
+          <span class="pw-stat-val">📝 ${test.question_count || 5} Qs</span>
+        </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <!-- Option 1: Live Stream (Zero Storage on Phone) -->
+      <div class="pw-action-group">
+        <!-- Primary Action: RAM Streaming -->
         <button class="btn-m-start" onclick="openInstructions('${test.id}', 'STREAM')">
-          ⚡ Practice Live (In-Memory RAM Only) &rarr;
+          <span>⚡ Start Test (Live RAM Stream)</span>
+          <span>&rarr;</span>
         </button>
 
-        <!-- Option 2: Encrypted Offline Download (Hidden from 'My Files') -->
-        <button onclick="downloadTestOffline('${test.id}', this)" style="background: #1e293b; color: ${isSaved ? '#34d399' : '#94a3b8'}; border: 1px solid ${isSaved ? '#059669' : '#475569'}; padding: 9px; font-size: 11px; font-weight: bold; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-          ${isSaved ? '✓ Downloaded & Encrypted in Vault (.pwenc)' : '📥 Download Encrypted for Offline (Hidden from Files)'}
+        <!-- Secondary Action: Offline Encryption -->
+        <button class="btn-pw-offline" onclick="downloadTestOffline('${test.id}', this)">
+          ${isSaved ? '✓ Encrypted in Vault (.pwenc)' : '📥 Download Encrypted for Offline (Hidden from Files)'}
         </button>
       </div>
     `;
@@ -747,12 +792,24 @@ async function submitExam() {
     const correctLetter = ['A', 'B', 'C', 'D'][parseInt(q.correct_answer)] || q.correct_answer || q.numerical_answer;
     const borderCol = !isGiven ? '#94a3b8' : (isCorrect ? '#22c55e' : '#ef4444');
 
+    const badgeClass = !isGiven ? 'pw-solution-badge-skipped' : (isCorrect ? 'pw-solution-badge-correct' : 'pw-solution-badge-wrong');
+    const resultPill = !isGiven 
+      ? '<span style="color: #64748b; font-weight: 700;">⚪ Skipped</span>' 
+      : (isCorrect 
+        ? '<span style="color: #10b981; font-weight: 800;">🟢 Correct (+4.0)</span>' 
+        : '<span style="color: #ef4444; font-weight: 800;">🔴 Incorrect (-1.0)</span>');
+
     solutionsHtml += `
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid ${borderCol}; padding: 8px 10px; border-radius: 6px; margin-bottom: 8px; font-size: 11px;">
-        <div style="font-weight: bold; margin-bottom: 4px; color: #1e3a5f;">Q${idx + 1}. [${q.subject}]</div>
-        <div style="margin-bottom: 4px;">${parseLatex(q.question_text)}</div>
-        <div style="color: #475569; margin-bottom: 4px;"><strong>Your Answer:</strong> ${studentAnsText} | <strong>Correct:</strong> Option (${correctLetter})</div>
-        ${q.solution_text ? `<div style="background: #eff6ff; padding: 6px; border-radius: 4px; color: #1e40af;">${parseLatex(q.solution_text)}</div>` : ''}
+      <div class="pw-solution-card ${badgeClass}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-weight: 800; color: #0f172a; font-size: 13px;">Question ${idx + 1} &bull; <span style="color: #4f46e5;">${q.subject || 'Core'}</span></span>
+          ${resultPill}
+        </div>
+        <div style="color: #334155; margin-bottom: 8px; line-height: 1.5;">${parseLatex(q.question_text)}</div>
+        <div style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; font-size: 11.5px; color: #475569; margin-bottom: 6px;">
+          <strong>Your Answer:</strong> ${studentAnsText} &nbsp;|&nbsp; <strong>Correct Key:</strong> Option (${correctLetter})
+        </div>
+        ${q.solution_text ? `<div style="background: #eef2ff; border: 1px solid #c7d2fe; padding: 8px 10px; border-radius: 6px; color: #3730a3; font-size: 11.5px; line-height: 1.5;"><strong>Detailed Solution:</strong><br>${parseLatex(q.solution_text)}</div>` : ''}
       </div>
     `;
   });

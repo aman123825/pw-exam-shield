@@ -1,5 +1,7 @@
 node_modules/
 build/
+build-teacher/
+*.idsig
 *.keystore
 cloudflared.exe
 *.log
