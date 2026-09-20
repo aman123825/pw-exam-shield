@@ -53,17 +53,12 @@
       <!-- Portal Top Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="mobile-logo-badge">PW CBT</span>
-          <span style="font-size: 15px; font-weight: bold; color: #ffffff;">PW Exam Shield</span>
+          <span class="mobile-logo-badge">PW</span>
+          <span style="font-size: 16px; font-weight: bold; color: #ffffff;">PW Student Exam</span>
         </div>
-        <!-- Role Switcher Pill -->
-        <div style="display: flex; background: #1e293b; border: 1px solid #475569; border-radius: 16px; padding: 2px;">
-          <button id="btn-role-student" onclick="switchRole('STUDENT')" style="background: #3b82f6; color: #ffffff; border: none; border-radius: 14px; padding: 4px 10px; font-size: 11px; font-weight: bold; cursor: pointer;">
-            Student
-          </button>
-          <button id="btn-role-teacher" onclick="switchRole('TEACHER')" style="background: none; color: #94a3b8; border: none; border-radius: 14px; padding: 4px 10px; font-size: 11px; font-weight: bold; cursor: pointer;">
-            Teacher
-          </button>
+        <div style="background: #0f172a; border: 1px solid #1e3a8a; padding: 4px 10px; border-radius: 14px; font-size: 10px; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e;"></span>
+          <span style="font-weight: bold;">PW Cloud Active</span>
         </div>
       </div>
 
@@ -194,87 +189,6 @@
           Submit
         </button>
       </footer>
-    </div>
-
-    <!-- ================================================================= -->
-    <!-- VIEW 3: TEACHER STUDIO (MOBILE DASHBOARD)                         -->
-    <!-- ================================================================= -->
-    <div id="view-teacher" class="teacher-mobile-container" style="display: none;">
-      <!-- Teacher Top Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="mobile-logo-badge" style="background: #c084fc; color: #1e1b4b;">FACULTY</span>
-          <span style="font-size: 15px; font-weight: bold; color: #ffffff;">Teacher Studio</span>
-        </div>
-        <button onclick="switchRole('STUDENT')" style="background: #334155; color: #f8fafc; border: none; border-radius: 14px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer;">
-          &larr; Student View
-        </button>
-      </div>
-
-      <!-- Batch Management Card -->
-      <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-        <div style="font-size: 14px; font-weight: bold; color: #38bdf8; margin-bottom: 8px;">1. Create Batch &amp; Join Code</div>
-        <div class="t-input-group">
-          <label class="t-input-label">BATCH NAME</label>
-          <input type="text" id="t-batch-name" placeholder="e.g. Lakshya JEE 2025" class="t-text-input">
-        </div>
-        <div class="t-input-group">
-          <label class="t-input-label">JOIN CODE (SHARE WITH STUDENTS)</label>
-          <input type="text" id="t-batch-code" placeholder="e.g. PWJEE1" class="t-text-input" style="text-transform: uppercase;">
-        </div>
-        <button onclick="createBatch()" style="background: #3b82f6; color: #ffffff; width: 100%; padding: 10px; font-size: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">
-          Create &amp; Activate Batch
-        </button>
-        <div id="t-batch-status" style="font-size: 11px; color: #34d399; margin-top: 6px; display: none;"></div>
-      </div>
-
-      <!-- Test Uploader Card -->
-      <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-        <div style="font-size: 14px; font-weight: bold; color: #f29306; margin-bottom: 8px;">2. Publish Practice Test (Direct to Mobile)</div>
-        <div class="t-input-group">
-          <label class="t-input-label">TARGET BATCH</label>
-          <select id="t-test-batch" class="t-text-input" style="background: #1e293b;">
-            <!-- Filled dynamically -->
-          </select>
-        </div>
-        <div class="t-input-group">
-          <label class="t-input-label">TEST TITLE</label>
-          <input type="text" id="t-test-title" placeholder="e.g. JEE Main 2025 - Physics Mechanics Drill" class="t-text-input">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <div class="t-input-group">
-            <label class="t-input-label">DURATION (MIN)</label>
-            <input type="number" id="t-test-duration" value="60" class="t-text-input">
-          </div>
-          <div class="t-input-group">
-            <label class="t-input-label">TOTAL MARKS</label>
-            <input type="number" id="t-test-marks" value="100" class="t-text-input">
-          </div>
-        </div>
-
-        <div class="t-input-group">
-          <label class="t-input-label">QUESTION 1 TEXT (SUPPORTS $LATEX$)</label>
-          <textarea id="t-q-text" rows="2" class="t-text-input" placeholder="A car travels with speed $v = 20\text{ m/s}$..."></textarea>
-        </div>
-
-        <div class="t-input-group">
-          <label class="t-input-label">OPTIONS (A, B, C, D)</label>
-          <input type="text" id="t-opt-a" placeholder="Option A (Correct)" class="t-text-input" style="margin-bottom: 4px;">
-          <input type="text" id="t-opt-b" placeholder="Option B" class="t-text-input" style="margin-bottom: 4px;">
-          <input type="text" id="t-opt-c" placeholder="Option C" class="t-text-input" style="margin-bottom: 4px;">
-          <input type="text" id="t-opt-d" placeholder="Option D" class="t-text-input">
-        </div>
-
-        <div class="t-input-group">
-          <label class="t-input-label">STEP-BY-STEP SOLUTION</label>
-          <input type="text" id="t-solution-text" placeholder="Detailed formula solution..." class="t-text-input">
-        </div>
-
-        <button onclick="publishTest()" style="background: #16a34a; color: #ffffff; width: 100%; padding: 12px; font-size: 13px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">
-          Publish &amp; Dispatch to Mobile Students &rarr;
-        </button>
-        <div id="t-publish-status" style="font-size: 11px; color: #34d399; margin-top: 6px; display: none;"></div>
-      </div>
     </div>
 
   </div>

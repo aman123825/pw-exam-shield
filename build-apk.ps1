@@ -80,7 +80,7 @@ if (-not (Test-Path $keystorePath)) {
         -keysize 2048
 }
 
-$outputApk = "$baseDir\pw-exam-shield.apk"
+$outputApk = "$baseDir\PW-Student-Exam.apk"
 & $apksigner sign --ks $keystorePath --ks-pass pass:android --ks-key-alias pwshield --out $outputApk "$buildDir\app-aligned.apk"
 if ($LASTEXITCODE -ne 0) { throw "Apksigner failed" }
 
@@ -95,14 +95,16 @@ Write-Host "  BUILD SUCCESSFUL!" -ForegroundColor Green
 Write-Host "  Output APK: $outputApk ($apkSizeMB MB)" -ForegroundColor Green
 Write-Host "========================================================================" -ForegroundColor Green
 
-# Copy to user's Downloads directory for easy access
-$downloadsApk = "C:\Users\vivek\Downloads\pw-exam-shield.apk"
+# Copy to user's Downloads directory
+$downloadsApk = "C:\Users\vivek\Downloads\PW-Student-Exam.apk"
 Copy-Item $outputApk $downloadsApk -Force
-Write-Host "[+] Copied to Downloads: $downloadsApk" -ForegroundColor Cyan
+Copy-Item $outputApk "C:\Users\vivek\Downloads\pw-exam-shield.apk" -Force
+Write-Host "[+] Copied to PC Downloads: $downloadsApk" -ForegroundColor Cyan
 
-# Copy directly to connected Samsung Galaxy S25 if available
+# Copy directly to connected Samsung Galaxy S25
 $phoneDownloadDir = "C:\Users\vivek\CrossDevice\Vivek's S25\storage\Download"
 if (Test-Path $phoneDownloadDir) {
+    Copy-Item $outputApk "$phoneDownloadDir\PW-Student-Exam.apk" -Force
     Copy-Item $outputApk "$phoneDownloadDir\pw-exam-shield.apk" -Force
-    Write-Host "[+] Copied directly to Vivek's S25 Phone: $phoneDownloadDir\pw-exam-shield.apk" -ForegroundColor Green
+    Write-Host "[+] Copied to Vivek's S25 Phone: $phoneDownloadDir\PW-Student-Exam.apk" -ForegroundColor Green
 }

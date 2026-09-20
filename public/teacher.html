@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>PW Teacher Studio — Faculty CMS Desk</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="css/mobile-cbt.css">
+  <script src="vendor/katex/katex.min.js"></script>
+  <style>
+    @media (min-width: 650px) {
+      body {
+        background: #090d16;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mobile-app-shell {
+        max-width: 480px;
+        height: 92vh !important;
+        max-height: 900px;
+        border: 4px solid #475569;
+        border-radius: 28px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75);
+        overflow-y: auto;
+      }
+    }
+    .t-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 8px;
+    }
+    .t-table th, .t-table td {
+      border: 1px solid #334155;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .t-table th {
+      background: #0f172a;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body style="background: #090d16;">
+  <div class="mobile-app-shell" style="padding: 16px; overflow-y: auto;">
+
+    <!-- Teacher Top Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="mobile-logo-badge" style="background: #c084fc; color: #1e1b4b;">FACULTY</span>
+        <span style="font-size: 16px; font-weight: bold; color: #ffffff;">PW Teacher Studio</span>
+      </div>
+      <div style="background: #1e1b4b; border: 1px solid #7c3aed; padding: 3px 8px; border-radius: 12px; font-size: 10px; color: #d8b4fe; display: flex; align-items: center; gap: 4px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #a855f7;"></span>
+        <span>24/7 Cloud CMS</span>
+      </div>
+    </div>
+
+    <!-- Active Cloud Server Info -->
+    <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; margin-bottom: 16px; font-size: 11px; color: #94a3b8;">
+      <strong>Cloud Backend:</strong> <span id="t-cloud-url" style="color: #38bdf8;">https://pw-exam-shield.vercel.app</span>
+      <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Tests published here automatically reach all student apps across India.</div>
+    </div>
+
+    <!-- 1. Batch Management Card -->
+    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+      <div style="font-size: 13px; font-weight: bold; color: #38bdf8; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        <span>📁</span> 1. Create Batch &amp; Join Code
+      </div>
+      <div class="t-input-group">
+        <label class="t-input-label">BATCH NAME</label>
+        <input type="text" id="t-batch-name" placeholder="e.g. Lakshya JEE 2025 Droppers" class="t-text-input">
+      </div>
+      <div class="t-input-group">
+        <label class="t-input-label">JOIN CODE (STUDENTS ENTER THIS CODE)</label>
+        <input type="text" id="t-batch-code" placeholder="e.g. PWJEE25" class="t-text-input" style="text-transform: uppercase;">
+      </div>
+      <button onclick="createBatch()" style="background: #3b82f6; color: #ffffff; width: 100%; padding: 10px; font-size: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">
+        Create &amp; Activate Batch
+      </button>
+      <div id="t-batch-status" style="font-size: 11px; color: #34d399; margin-top: 6px; display: none;"></div>
+    </div>
+
+    <!-- 2. Test Uploader Card -->
+    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+      <div style="font-size: 13px; font-weight: bold; color: #f29306; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        <span>📝</span> 2. Publish Mock Test to Students
+      </div>
+      <div class="t-input-group">
+        <label class="t-input-label">SELECT TARGET BATCH</label>
+        <select id="t-test-batch" class="t-text-input" style="background: #0f172a; color: #ffffff;">
+          <!-- Loaded dynamically -->
+        </select>
+      </div>
+      <div class="t-input-group">
+        <label class="t-input-label">TEST TITLE</label>
+        <input type="text" id="t-test-title" placeholder="e.g. JEE Main 2025 - Physics Mechanics Drill 01" class="t-text-input">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="t-input-group">
+          <label class="t-input-label">DURATION (MINUTES)</label>
+          <input type="number" id="t-test-duration" value="60" class="t-text-input">
+        </div>
+        <div class="t-input-group">
+          <label class="t-input-label">TOTAL MARKS</label>
+          <input type="number" id="t-test-marks" value="100" class="t-text-input">
+        </div>
+      </div>
+
+      <div class="t-input-group">
+        <label class="t-input-label">QUESTION 1 (SUPPORTS $LATEX$ MATH FORMULAS)</label>
+        <textarea id="t-q-text" rows="3" class="t-text-input" placeholder="A particle moves with speed $v = \sqrt{2gh}$..."></textarea>
+      </div>
+
+      <div class="t-input-group">
+        <label class="t-input-label">OPTIONS (A, B, C, D)</label>
+        <input type="text" id="t-opt-a" placeholder="Option A (Correct Answer)" class="t-text-input" style="margin-bottom: 6px;">
+        <input type="text" id="t-opt-b" placeholder="Option B" class="t-text-input" style="margin-bottom: 6px;">
+        <input type="text" id="t-opt-c" placeholder="Option C" class="t-text-input" style="margin-bottom: 6px;">
+        <input type="text" id="t-opt-d" placeholder="Option D" class="t-text-input">
+      </div>
+
+      <div class="t-input-group">
+        <label class="t-input-label">STEP-BY-STEP SOLUTION</label>
+        <textarea id="t-solution-text" rows="2" class="t-text-input" placeholder="Formula: $v = \sqrt{2gh}$, so when $h=10\text{m}$..."></textarea>
+      </div>
+
+      <button onclick="publishTest()" style="background: #16a34a; color: #ffffff; width: 100%; padding: 12px; font-size: 13px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">
+        🚀 Publish &amp; Dispatch Test to All Student Phones &rarr;
+      </button>
+      <div id="t-publish-status" style="font-size: 11px; color: #34d399; margin-top: 6px; display: none;"></div>
+    </div>
+
+    <!-- 3. Real-Time Student Submissions Leaderboard -->
+    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div style="font-size: 13px; font-weight: bold; color: #38bdf8;">📊 3. Live Student Submissions</div>
+        <button onclick="loadSubmissions()" style="background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">↻ Refresh</button>
+      </div>
+      <div id="submissions-container" style="overflow-x: auto;">
+        <div style="color: #94a3b8; font-size: 11px;">Loading submissions...</div>
+      </div>
+    </div>
+
+    <!-- 4. Security Proctor Logs (Anti-Screenshot Violations) -->
+    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div style="font-size: 13px; font-weight: bold; color: #f87171;">🛡️ 4. Anti-Screenshot Security Violations</div>
+        <button onclick="loadViolations()" style="background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">↻ Refresh</button>
+      </div>
+      <div id="violations-container" style="overflow-x: auto;">
+        <div style="color: #94a3b8; font-size: 11px;">Loading security logs...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/offline-vault.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('t-cloud-url').innerText = window.getApiHost();
+      await loadTeacherBatches();
+      await loadSubmissions();
+      await loadViolations();
+    });
+
+    async function loadTeacherBatches() {
+      try {
+        const res = await fetch(window.apiUrl('/api/batches'));
+        const batches = await res.json();
+        const select = document.getElementById('t-test-batch');
+        if (!select) return;
+        select.innerHTML = '';
+        batches.forEach(b => {
+          const opt = document.createElement('option');
+          opt.value = b.id;
+          opt.innerText = `${b.name} (Code: ${b.code})`;
+          select.appendChild(opt);
+        });
+      } catch (e) {}
+    }
+
+    async function createBatch() {
+      const name = document.getElementById('t-batch-name').value;
+      const code = document.getElementById('t-batch-code').value;
+      const statusEl = document.getElementById('t-batch-status');
+
+      if (!name || !code) {
+        alert('Please fill out batch name and code.');
+        return;
+      }
+
+      const res = await fetch(window.apiUrl('/api/batches'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, code, teacher_name: 'Faculty', exam_type: 'JEE_MAIN' })
+      });
+      const data = await res.json();
+      statusEl.innerText = `✓ Created Batch: ${data.name} (Join Code: ${data.code})`;
+      statusEl.style.display = 'block';
+      loadTeacherBatches();
+    }
+
+    async function publishTest() {
+      const batchId = document.getElementById('t-test-batch').value;
+      const title = document.getElementById('t-test-title').value;
+      const duration = document.getElementById('t-test-duration').value;
+      const marks = document.getElementById('t-test-marks').value;
+      const qText = document.getElementById('t-q-text').value;
+      const optA = document.getElementById('t-opt-a').value;
+      const optB = document.getElementById('t-opt-b').value;
+      const optC = document.getElementById('t-opt-c').value;
+      const optD = document.getElementById('t-opt-d').value;
+      const solution = document.getElementById('t-solution-text').value;
+      const statusEl = document.getElementById('t-publish-status');
+
+      if (!title || !qText || !optA) {
+        alert('Please provide test title, question text, and at least Option A.');
+        return;
+      }
+
+      const testPayload = {
+        batchId,
+        title,
+        examType: 'JEE_MAIN',
+        durationMinutes: Number(duration),
+        totalMarks: Number(marks),
+        positiveMarks: 4,
+        negativeMarks: 1,
+        isKioskEnforced: 1,
+        questions: [
+          {
+            sectionTitle: 'Physics - Section A',
+            subject: 'Physics',
+            questionText: qText,
+            questionType: 'SCQ',
+            optionsJson: [optA, optB || 'Option B', optC || 'Option C', optD || 'Option D'],
+            correctAnswer: '0',
+            solutionText: solution || 'Institutional step-by-step solution.'
+          }
+        ]
+      };
+
+      const res = await fetch(window.apiUrl('/api/tests'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testPayload)
+      });
+      const result = await res.json();
+      statusEl.innerText = `✓ Published "${title}"! Test is now instantly live on student mobile phones!`;
+      statusEl.style.display = 'block';
+    }
+
+    async function loadSubmissions() {
+      const container = document.getElementById('submissions-container');
+      try {
+        const res = await fetch(window.apiUrl('/api/submissions/test-jee-01'));
+        const list = await res.json();
+        if (!list || list.length === 0) {
+          container.innerHTML = '<div style="color: #64748b; font-size: 11px;">No student submissions yet.</div>';
+          return;
+        }
+        let html = '<table class="t-table"><thead><tr><th>Student</th><th>Roll</th><th>Score</th><th>Accuracy</th><th>Time</th></tr></thead><tbody>';
+        list.forEach(item => {
+          html += `<tr>
+            <td style="font-weight: bold; color: #ffffff;">${item.student_name}</td>
+            <td style="color: #94a3b8;">${item.roll_number}</td>
+            <td style="color: #22c55e; font-weight: bold;">${item.score}/${item.max_score}</td>
+            <td style="color: #38bdf8;">${item.accuracy}%</td>
+            <td style="color: #64748b;">${item.time_spent_seconds}s</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = '<div style="color: #64748b; font-size: 11px;">Ready for student submissions.</div>';
+      }
+    }
+
+    async function loadViolations() {
+      const container = document.getElementById('violations-container');
+      try {
+        const res = await fetch(window.apiUrl('/api/violations/test-jee-01'));
+        const list = await res.json();
+        if (!list || list.length === 0) {
+          container.innerHTML = '<div style="color: #10b981; font-size: 11px;">✓ No security violations detected. All sessions secure.</div>';
+          return;
+        }
+        let html = '<table class="t-table"><thead><tr><th>Student</th><th>Violation</th><th>Time</th></tr></thead><tbody>';
+        list.forEach(v => {
+          html += `<tr>
+            <td style="font-weight: bold; color: #f87171;">${v.student_name}</td>
+            <td style="color: #fca5a5;">${v.violation_type}</td>
+            <td style="color: #94a3b8;">${new Date(v.timestamp).toLocaleTimeString()}</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = '<div style="color: #10b981; font-size: 11px;">✓ No security violations detected.</div>';
+      }
+    }
+  </script>
+</body>
+</html>

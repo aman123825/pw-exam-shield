@@ -23,7 +23,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   updateServerHostDisplay();
   setupAntiScreenshot();
   await loadPracticeTests();
-  await loadTeacherBatches();
 });
 
 function initCandidateProfile() {
@@ -166,39 +165,7 @@ function triggerScreenshotAlert(reason) {
 }
 
 // -------------------------------------------------------------------
-// 1. ROLE SWITCHER (STUDENT <-> TEACHER)
-// -------------------------------------------------------------------
-function switchRole(role) {
-  const portalView = document.getElementById('view-portal');
-  const examView = document.getElementById('view-exam');
-  const teacherView = document.getElementById('view-teacher');
-
-  const btnStudent = document.getElementById('btn-role-student');
-  const btnTeacher = document.getElementById('btn-role-teacher');
-
-  if (role === 'TEACHER') {
-    portalView.style.display = 'none';
-    examView.style.display = 'none';
-    teacherView.style.display = 'block';
-    btnTeacher.style.background = '#c084fc';
-    btnTeacher.style.color = '#1e1b4b';
-    btnStudent.style.background = 'none';
-    btnStudent.style.color = '#94a3b8';
-    loadTeacherBatches();
-  } else {
-    teacherView.style.display = 'none';
-    examView.style.display = 'none';
-    portalView.style.display = 'flex';
-    btnStudent.style.background = '#3b82f6';
-    btnStudent.style.color = '#ffffff';
-    btnTeacher.style.background = 'none';
-    btnTeacher.style.color = '#94a3b8';
-    loadPracticeTests();
-  }
-}
-
-// -------------------------------------------------------------------
-// 2. STUDENT PRACTICE TESTS HUB
+// 1. STUDENT PRACTICE TESTS HUB
 // -------------------------------------------------------------------
 async function loadPracticeTests() {
   const container = document.getElementById('practice-tests-container');
@@ -865,98 +832,10 @@ async function joinBatch() {
   } catch (err) {
     msgEl.style.color = '#f87171';
     msgEl.innerText = err.message;
-  }
-}
-
-async function loadTeacherBatches() {
-  try {
-    const res = await fetch(window.apiUrl('/api/batches'));
-    const batches = await res.json();
-    const select = document.getElementById('t-test-batch');
-    if (!select) return;
-    select.innerHTML = '';
-    batches.forEach(b => {
-      const opt = document.createElement('option');
-      opt.value = b.id;
-      opt.innerText = `${b.name} (${b.code})`;
-      select.appendChild(opt);
-    });
-  } catch (e) {}
-}
-
-async function createBatch() {
-  const name = document.getElementById('t-batch-name').value;
-  const code = document.getElementById('t-batch-code').value;
-  const statusEl = document.getElementById('t-batch-status');
-
-  if (!name || !code) {
-    alert('Please fill out batch name and code.');
-    return;
-  }
-
-  const res = await fetch(window.apiUrl('/api/batches'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, code, teacher_name: 'Dr. Alakh Faculty', exam_type: 'JEE_MAIN' })
-  });
-  const data = await res.json();
-  statusEl.innerText = `Created Batch: ${data.name} (Code: ${data.code})`;
-  statusEl.style.display = 'block';
-  loadTeacherBatches();
-}
-
-async function publishTest() {
-  const batchId = document.getElementById('t-test-batch').value;
-  const title = document.getElementById('t-test-title').value;
-  const duration = document.getElementById('t-test-duration').value;
-  const marks = document.getElementById('t-test-marks').value;
-  const qText = document.getElementById('t-q-text').value;
-  const optA = document.getElementById('t-opt-a').value;
-  const optB = document.getElementById('t-opt-b').value;
-  const optC = document.getElementById('t-opt-c').value;
-  const optD = document.getElementById('t-opt-d').value;
-  const solution = document.getElementById('t-solution-text').value;
-  const statusEl = document.getElementById('t-publish-status');
-
-  if (!title || !qText || !optA) {
-    alert('Please provide test title, question text, and at least Option A.');
-    return;
-  }
-
-  const testPayload = {
-    batchId,
-    title,
-    examType: 'JEE_MAIN',
-    durationMinutes: Number(duration),
-    totalMarks: Number(marks),
-    positiveMarks: 4,
-    negativeMarks: 1,
-    isKioskEnforced: 1,
-    questions: [
-      {
-        sectionTitle: 'Physics - Section A',
-        subject: 'Physics',
-        questionText: qText,
-        questionType: 'SCQ',
-        optionsJson: [optA, optB || 'Option B', optC || 'Option C', optD || 'Option D'],
-        correctAnswer: '0',
-        solutionText: solution || 'Institutional step-by-step solution.'
-      }
-    ]
-  };
-
-  const res = await fetch(window.apiUrl('/api/tests'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(testPayload)
-  });
-  const result = await res.json();
-  statusEl.innerText = `Published "${title}"! Test is now instantly live on student mobile phones!`;
-  statusEl.style.display = 'block';
 }
 
 // -------------------------------------------------------------------
-// 8. FORMULA PARSER (KaTeX)
+// 7. FORMULA PARSER (KaTeX)
 // -------------------------------------------------------------------
 function parseLatex(str) {
   if (!str) return '';
