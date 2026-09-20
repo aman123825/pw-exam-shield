@@ -80,7 +80,7 @@ if (-not (Test-Path $keystorePath)) {
         -keysize 2048
 }
 
-$outputApk = "$baseDir\PW-Student-Exam.apk"
+$outputApk = "$baseDir\ExamShield-Student.apk"
 & $apksigner sign --ks $keystorePath --ks-pass pass:android --ks-key-alias pwshield --out $outputApk "$buildDir\app-aligned.apk"
 if ($LASTEXITCODE -ne 0) { throw "Apksigner failed" }
 
@@ -97,18 +97,18 @@ Write-Host "====================================================================
 
 # Copy to public/apk for live web download
 if (-not (Test-Path "$baseDir\public\apk")) { New-Item -ItemType Directory -Path "$baseDir\public\apk" | Out-Null }
-Copy-Item $outputApk "$baseDir\public\apk\PW-Student-Exam.apk" -Force
+Copy-Item $outputApk "$baseDir\public\apk\ExamShield-Student.apk" -Force
 
 # Copy to user's PC Downloads directory
-$downloadsApk = "C:\Users\vivek\Downloads\PW-Student-Exam.apk"
+$downloadsApk = "C:\Users\vivek\Downloads\ExamShield-Student.apk"
 Copy-Item $outputApk $downloadsApk -Force
-Copy-Item $outputApk "C:\Users\vivek\Downloads\PW-Student-Exam-v4.apk" -Force
-Write-Host "[+] Copied to PC Downloads: $downloadsApk & PW-Student-Exam-v4.apk" -ForegroundColor Cyan
+Copy-Item $outputApk "C:\Users\vivek\Downloads\ExamShield-Student-v4.apk" -Force
+Write-Host "[+] Copied to PC Downloads: $downloadsApk & ExamShield-Student-v4.apk" -ForegroundColor Cyan
 
 # Copy directly to connected Samsung Galaxy S25
 $phoneDownloadDir = "C:\Users\vivek\CrossDevice\Vivek's S25\storage\Download"
 if (Test-Path $phoneDownloadDir) {
-    Copy-Item $outputApk "$phoneDownloadDir\PW-Student-Exam.apk" -Force
-    Copy-Item $outputApk "$phoneDownloadDir\PW-Student-Exam-v4.apk" -Force
-    Write-Host "[+] Copied to Vivek's S25 Phone: $phoneDownloadDir\PW-Student-Exam-v4.apk" -ForegroundColor Green
+    Copy-Item $outputApk "$phoneDownloadDir\ExamShield-Student.apk" -Force
+    Copy-Item $outputApk "$phoneDownloadDir\ExamShield-Student-v4.apk" -Force
+    Write-Host "[+] Copied to Vivek's S25 Phone: $phoneDownloadDir\ExamShield-Student-v4.apk" -ForegroundColor Green
 }

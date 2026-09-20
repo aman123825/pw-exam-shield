@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Physics Wallah — CBT Test Series</title>
+  <title>ExamShield — CBT Test Series</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="vendor/katex/katex.min.css">
   <link rel="stylesheet" href="css/mobile-cbt.css">
@@ -52,59 +52,71 @@
     <!-- VIEW 1: STUDENT PRACTICE PORTAL & HUB                             -->
     <!-- ================================================================= -->
     <div id="view-portal" class="mobile-portal-view">
-      <!-- Top App Bar -->
-      <header class="pw-header-bar">
-        <div class="pw-brand-group">
-          <div class="pw-logo-badge">PW</div>
-          <div>
-            <div class="pw-app-title">PW Test Series</div>
-            <div style="font-size: 10px; color: var(--pw-text-muted); font-weight: 600;">Authentic CBT Environment</div>
+      
+      <!-- Top App Bar (Light Theme) -->
+      <header class="app-top-bar">
+        <div class="top-bar-left">
+          <button class="top-menu-btn">&#9776;</button>
+          <div class="target-exam-pill">
+            <span class="exam-icon">&#9883;</span>
+            <span class="exam-name">11th IIT NEET &gt;</span>
           </div>
         </div>
-        <div class="pw-cloud-pill" id="server-status-pill" onclick="promptServerHost()" style="cursor: pointer;" title="Tap to view/switch server URL">
-          <span class="pw-dot-pulse"></span>
-          <span id="server-host-label">PW Cloud Active</span>
+        <div class="refer-earn-btn">
+          <div style="font-size: 16px;">&#127873;</div>
+          <div style="font-size: 9px; font-weight: 700; color: #1e293b;">Refer &amp; Earn</div>
         </div>
       </header>
 
-      <!-- Candidate Profile Banner -->
-      <div class="pw-profile-card" onclick="openProfileModal()">
-        <div class="pw-avatar-circle" id="portal-avatar">PW</div>
-        <div class="pw-profile-meta">
-          <div class="pw-profile-name">
-            <span id="portal-student-name">Student</span>
-            <span style="font-size: 11px; color: #818cf8; background: rgba(99, 102, 241, 0.15); padding: 2px 7px; border-radius: 6px; font-weight: 700;">✏️ Edit</span>
-          </div>
-          <div class="pw-profile-sub" id="portal-student-roll">Roll: Loading... • Target: JEE 2026</div>
+      <!-- Search Bar -->
+      <div class="search-container">
+        <div class="search-box">
+          <span style="color: #94a3b8; font-size: 14px; margin-right: 8px;">&#128269;</span>
+          <input type="text" placeholder="Search for 'NEET Batches'..." class="search-input" />
         </div>
-        <div class="pw-badge-secure">
-          🛡️ SECURE
+        <button class="search-study-btn">Study</button>
+      </div>
+
+      <!-- Hero Banner -->
+      <div class="hero-promo-banner">
+        <div class="hero-promo-text">
+          <div style="font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">Every Student needs a</div>
+          <div style="font-size: 22px; font-weight: 900; color: #4338ca; letter-spacing: -0.5px; margin-bottom: 12px;">PERFECT MOCK</div>
+          <button class="hero-promo-btn">Explore Now</button>
+        </div>
+        <!-- Simple dot indicators -->
+        <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px;">
+          <div style="width: 12px; height: 4px; background: #4338ca; border-radius: 4px;"></div>
+          <div style="width: 6px; height: 4px; background: rgba(0,0,0,0.2); border-radius: 4px;"></div>
+          <div style="width: 6px; height: 4px; background: rgba(0,0,0,0.2); border-radius: 4px;"></div>
         </div>
       </div>
 
-      <!-- Main Navigation Tabs (Test Series vs Mock Tests) -->
-      <div class="pw-main-tabs">
-        <button class="pw-main-tab active" id="tab-btn-batches" onclick="switchMainTab('BATCHES')">
-          <span>🎯</span> Test Series Batches
+      <!-- Scrollable Tabs / Filters -->
+      <div class="category-tabs-scroll">
+        <button class="category-tab filter-icon-tab">
+          <span style="font-size: 12px;">&#9776;</span> Filter
         </button>
-        <button class="pw-main-tab" id="tab-btn-tests" onclick="switchMainTab('TESTS')">
-          <span>📝</span> CBT Test Papers
+        <button class="category-tab active" onclick="switchMainTab('BATCHES')">
+          <span style="font-size: 14px;">&#127760;</span> Online Batches
+        </button>
+        <button class="category-tab" onclick="switchMainTab('TESTS')">
+          <span style="font-size: 14px;">&#128221;</span> CBT Tests
+        </button>
+        <button class="category-tab" style="color: #64748b;">
+          <span style="font-size: 14px;">&#128640;</span> Upcoming
         </button>
       </div>
 
-      <!-- TAB 1: BATCHES MARKETPLACE (READ INGREDIENTS & PAY/BUY DIRECTLY) -->
-      <div id="section-batches">
-        <div class="pw-section-title">
-          <span>Explore PW Test Series Batches</span>
-          <span style="font-size: 10px; font-weight: 800; color: #34d399; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 8px; border-radius: var(--radius-full);">Direct Enrollment</span>
-        </div>
+      <!-- TAB 1: BATCHES MARKETPLACE -->
+      <div id="section-batches" style="padding: 16px;">
         <div id="batches-container">
-          <!-- Filled dynamically with test series cards, full test ingredients list, and Buy Now buttons -->
+          <!-- dynamically rendered via JS -->
         </div>
       </div>
 
       <!-- TAB 2: CBT MOCK TESTS HUB -->
-      <div id="section-tests" style="display: none;">
+      <div id="section-tests" style="display: none; padding: 16px; padding-bottom: 80px;">
         <!-- Category Filter Tabs -->
         <div class="pw-filter-scroll">
           <button class="section-chip active" id="filter-all" onclick="filterTests('ALL', this)">🔥 All Tests</button>
@@ -124,6 +136,30 @@
           <!-- Filled dynamically -->
         </div>
       </div>
+      
+      <!-- Bottom Navigation -->
+      <div class="bottom-nav-bar">
+        <div class="bottom-nav-item" onclick="switchMainTab('TESTS')">
+          <div class="bottom-nav-icon">&#128221;</div>
+          <div class="bottom-nav-text">STUDY</div>
+        </div>
+        <div class="bottom-nav-item" onclick="switchMainTab('TESTS')">
+          <div class="bottom-nav-icon">&#128196;</div>
+          <div class="bottom-nav-text">TEST</div>
+        </div>
+        <div class="bottom-nav-item active" onclick="switchMainTab('BATCHES')">
+          <div class="bottom-nav-icon">&#127908;</div>
+          <div class="bottom-nav-text">BATCHES</div>
+        </div>
+        <div class="bottom-nav-item">
+          <div class="bottom-nav-icon">&#128142;</div>
+          <div class="bottom-nav-text">POWER</div>
+        </div>
+        <div class="bottom-nav-item">
+          <div class="bottom-nav-icon">&#128722;</div>
+          <div class="bottom-nav-text">STORE</div>
+        </div>
+      </div>
     </div>
 
     <!-- ================================================================= -->
@@ -133,7 +169,7 @@
       <!-- Mobile Top Bar with Timer -->
       <header class="mobile-topbar">
         <div class="mobile-brand">
-          <span class="pw-logo-badge" style="font-size: 11px; padding: 3px 6px;">PW</span>
+          <span class="pw-logo-badge" style="font-size: 11px; padding: 3px 6px;">ExamShield</span>
           <span class="mobile-title" id="exam-test-title">CBT Examination</span>
         </div>
 
@@ -149,7 +185,7 @@
       <!-- Candidate Subbar -->
       <div class="mobile-subbar">
         <div class="mobile-subbar-user">
-          <div class="mobile-user-avatar" id="exam-user-avatar">PW</div>
+          <div class="mobile-user-avatar" id="exam-user-avatar">ExamShield</div>
           <span style="font-weight: 700; color: #ffffff;" id="exam-student-label">Student</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
@@ -359,7 +395,7 @@
     <div class="pw-modal-card">
       <div class="pw-modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span class="pw-logo-badge" style="font-size: 13px; padding: 4px 8px;">PW</span>
+          <span class="pw-logo-badge" style="font-size: 13px; padding: 4px 8px;">ExamShield</span>
           <div>
             <div class="pw-modal-title">Candidate Profile</div>
             <div class="pw-modal-subtitle">Personalize your CBT Test Experience</div>
@@ -408,10 +444,10 @@
     <div class="pw-modal-card">
       <div class="pw-modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="pw-logo-badge" style="font-size: 11px; padding: 3px 6px;">PW PAY</span>
+          <span class="pw-logo-badge" style="font-size: 11px; padding: 3px 6px;">ExamShield PAY</span>
           <div>
             <div class="pw-modal-title" id="checkout-title">Batch Enrollment</div>
-            <div class="pw-modal-subtitle" id="checkout-target">Physics Wallah CBT Test Series</div>
+            <div class="pw-modal-subtitle" id="checkout-target">ExamShield CBT Test Series</div>
           </div>
         </div>
         <button class="pw-modal-close" onclick="closePaymentModal()">&times;</button>
@@ -425,7 +461,7 @@
             <span style="text-decoration: line-through;" id="checkout-mrp">₹4,999</span>
           </div>
           <div class="pw-checkout-line" style="color: #10b981; font-weight: 700;">
-            <span id="checkout-discount-label">PW Scholarship Discount (70% OFF)</span>
+            <span id="checkout-discount-label">ExamShield Scholarship Discount (70% OFF)</span>
             <span id="checkout-discount">-₹3,500</span>
           </div>
           <div class="pw-checkout-line">

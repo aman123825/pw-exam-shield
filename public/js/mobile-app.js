@@ -366,57 +366,51 @@ function renderBatchesList() {
   catalog.forEach(batch => {
     const enrolled = isBatchEnrolled(batch.id, batch.code) || batch.price === 'FREE';
     const isNEET = (batch.exam_type || '').toUpperCase().includes('NEET');
-    const badgeClass = isNEET ? 'pw-badge-neet' : 'pw-badge-jee';
-    const badgeText = isNEET ? 'NEET UG PRE-MEDICAL' : 'JEE MAIN & ADVANCED';
+    const badgeText = isNEET ? 'NEET UG' : 'JEE MAIN & ADVANCED';
 
     const card = document.createElement('div');
-    card.className = 'pw-course-card';
+    card.className = 'batch-card-modern';
     card.innerHTML = `
-      <div class="pw-course-header">
-        <span class="pw-course-badge ${badgeClass}">${badgeText}</span>
-        <span style="font-size: 11px; color: ${enrolled ? '#34d399' : '#818cf8'}; font-weight: 800; font-family: monospace;">
-          ${enrolled ? '✓ ACTIVE' : 'OPEN BATCH'}
-        </span>
-      </div>
-
-      <div class="pw-course-title">${batch.name}</div>
-      <div class="pw-course-sub">${batch.subtitle}</div>
-
-      <!-- INGREDIENTS LIST -->
-      <div class="pw-ingredients-box">
-        <div class="pw-ingredients-label">
-          <span>📋</span> Batch Ingredients &amp; Offerings:
+      <div class="bcm-header">
+        <div class="bcm-title">${batch.name}</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span class="bcm-tag-new">New</span>
+          <span style="font-size: 14px;">&#128279;</span>
         </div>
-        ${batch.ingredients.map(ing => `
-          <div class="pw-ingredient-item">
-            <span class="pw-ingredient-check">✔</span>
-            <span>${ing}</span>
-          </div>
-        `).join('')}
       </div>
 
-      <!-- PRICE ROW -->
-      <div class="pw-price-row">
-        <div class="pw-price-group">
-          <span class="pw-price-current">${batch.price}</span>
-          ${batch.mrp ? `<span class="pw-price-original">${batch.mrp}</span>` : ''}
-          ${batch.discount ? `<span class="pw-discount-badge">${batch.discount}</span>` : ''}
-        </div>
-        <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">Full Exam Validity</span>
+      <div class="bcm-thumbnail">
+        <div style="color: white; font-weight: 900; font-size: 26px; letter-spacing: 1px; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">ExamShield</div>
       </div>
 
-      <!-- ACTION BUTTON -->
-      ${enrolled ? `
-        <button class="btn-pw-enrolled" onclick="viewBatchTests('${batch.code}')">
-          <span>✓ Enrolled &amp; Active • Access Tests</span>
-          <span>&rarr;</span>
-        </button>
-      ` : `
-        <button class="btn-pw-buy" onclick="openPaymentModal('${batch.id}', '${escapeQuotes(batch.name)}', '${batch.price}', '${batch.mrp || ''}', '${batch.discount || ''}', '${batch.code}')">
-          <span>💳 Pay &amp; Enroll Now (${batch.price})</span>
-          <span>&rarr;</span>
-        </button>
-      `}
+      <div class="bcm-details">
+        <div class="bcm-detail-row"><span>&#127891;</span> Target: ${badgeText} ${batch.subtitle.substring(0, 30)}...</div>
+        <div class="bcm-detail-row"><span>&#128197;</span> Starts on 09 May, 2026 &bull; Ends on 31 May, 2027</div>
+        <div class="bcm-detail-row"><span>&#129489;&#8205;&#127890;</span> Expert CBT Curators</div>
+        <div class="bcm-detail-row"><span>&#11088;</span> ${batch.ingredients[0]}</div>
+      </div>
+
+      <div class="bcm-price-row">
+        <div class="bcm-price-main">${batch.price}</div>
+        <div class="bcm-price-mrp">${batch.mrp || ''}</div>
+        ${batch.discount ? `<div class="bcm-price-discount">&#127991;&#65039; Discount of ${batch.discount} applied</div>` : ''}
+      </div>
+
+      <div class="bcm-buttons">
+        ${enrolled ? `
+          <button class="bcm-btn-explore" style="flex: 1; background: #dcfce7; color: #166534;" onclick="viewBatchTests('${batch.code}')">
+            &#10004; ENROLLED
+          </button>
+          <button class="bcm-btn-buy" style="flex: 2;" onclick="viewBatchTests('${batch.code}')">
+            ACCESS TESTS
+          </button>
+        ` : `
+          <button class="bcm-btn-explore">EXPLORE</button>
+          <button class="bcm-btn-buy" onclick="openPaymentModal('${batch.id}', '${escapeQuotes(batch.name)}', '${batch.price}', '${batch.mrp || ''}', '${batch.discount || ''}', '${batch.code}')">
+            BUY NOW
+          </button>
+        `}
+      </div>
     `;
     container.appendChild(card);
   });

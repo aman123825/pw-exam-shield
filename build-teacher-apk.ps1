@@ -60,7 +60,7 @@ if ($LASTEXITCODE -ne 0) { throw "Zipalign failed" }
 Write-Host "[6/6] Signing APK..." -ForegroundColor Yellow
 $keystorePath = "$baseDir\keystore\pw-release.keystore"
 
-$outputApk = "$baseDir\PW-Teacher-Studio.apk"
+$outputApk = "$baseDir\ExamShield-Teacher-Studio.apk"
 & $apksigner sign --ks $keystorePath --ks-pass pass:android --ks-key-alias pwshield --out $outputApk "$buildDir\app-aligned.apk"
 if ($LASTEXITCODE -ne 0) { throw "Apksigner failed" }
 
@@ -77,18 +77,18 @@ Write-Host "====================================================================
 
 # Copy to public/apk for live web download
 if (-not (Test-Path "$baseDir\public\apk")) { New-Item -ItemType Directory -Path "$baseDir\public\apk" | Out-Null }
-Copy-Item $outputApk "$baseDir\public\apk\PW-Teacher-Studio.apk" -Force
+Copy-Item $outputApk "$baseDir\public\apk\ExamShield-Teacher-Studio.apk" -Force
 
 # Copy to PC Downloads
-$downloadsApk = "C:\Users\vivek\Downloads\PW-Teacher-Studio.apk"
+$downloadsApk = "C:\Users\vivek\Downloads\ExamShield-Teacher-Studio.apk"
 Copy-Item $outputApk $downloadsApk -Force
-Copy-Item $outputApk "C:\Users\vivek\Downloads\PW-Teacher-Studio-v4.apk" -Force
-Write-Host "[+] Copied to PC Downloads: $downloadsApk & PW-Teacher-Studio-v4.apk" -ForegroundColor Cyan
+Copy-Item $outputApk "C:\Users\vivek\Downloads\ExamShield-Teacher-Studio-v4.apk" -Force
+Write-Host "[+] Copied to PC Downloads: $downloadsApk & ExamShield-Teacher-Studio-v4.apk" -ForegroundColor Cyan
 
 # Copy to Vivek's S25 Phone
 $phoneDownloadDir = "C:\Users\vivek\CrossDevice\Vivek's S25\storage\Download"
 if (Test-Path $phoneDownloadDir) {
-    Copy-Item $outputApk "$phoneDownloadDir\PW-Teacher-Studio.apk" -Force
-    Copy-Item $outputApk "$phoneDownloadDir\PW-Teacher-Studio-v4.apk" -Force
-    Write-Host "[+] Copied to Vivek's S25 Phone: $phoneDownloadDir\PW-Teacher-Studio-v4.apk" -ForegroundColor Green
+    Copy-Item $outputApk "$phoneDownloadDir\ExamShield-Teacher-Studio.apk" -Force
+    Copy-Item $outputApk "$phoneDownloadDir\ExamShield-Teacher-Studio-v4.apk" -Force
+    Write-Host "[+] Copied to Vivek's S25 Phone: $phoneDownloadDir\ExamShield-Teacher-Studio-v4.apk" -ForegroundColor Green
 }
