@@ -1,8 +1,8 @@
 // PW Exam Shield - Mobile CBT Engine & Anti-Screenshot Controller
 
-let studentName = 'Arjun Verma';
-let rollNumber = 'ROLL-2025-01';
-let batchCode = 'PWJEE1';
+let studentName = localStorage.getItem('PW_STUDENT_NAME') || '';
+let rollNumber = localStorage.getItem('PW_STUDENT_ROLL') || '';
+let batchCode = localStorage.getItem('PW_BATCH_CODE') || 'PWJEE1';
 
 let allTests = [];
 let filteredCategory = 'ALL';
@@ -19,12 +19,59 @@ let secondsLeft = 180 * 60;
 
 // Initialize on DOM Ready
 window.addEventListener('DOMContentLoaded', async () => {
+  initCandidateProfile();
   updateServerHostDisplay();
-  setupWatermark();
   setupAntiScreenshot();
   await loadPracticeTests();
   await loadTeacherBatches();
 });
+
+function initCandidateProfile() {
+  if (!studentName || !rollNumber) {
+    setTimeout(openProfileModal, 500);
+  } else {
+    updateProfileDisplay();
+  }
+}
+
+function updateProfileDisplay() {
+  const nameEl = document.getElementById('portal-student-name');
+  const rollEl = document.getElementById('portal-student-roll');
+  const examStudentLabel = document.getElementById('exam-student-label');
+  if (nameEl) nameEl.innerText = studentName || 'Candidate';
+  if (rollEl) rollEl.innerText = `Roll: ${rollNumber || 'Not set'} • Batch: ${batchCode}`;
+  if (examStudentLabel) examStudentLabel.innerText = studentName || 'Candidate';
+  setupWatermark();
+}
+
+function openProfileModal() {
+  const modal = document.getElementById('profile-modal');
+  if (modal) {
+    document.getElementById('prof-name-input').value = studentName;
+    document.getElementById('prof-roll-input').value = rollNumber;
+    modal.style.display = 'flex';
+  }
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById('profile-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveCandidateProfile() {
+  const name = (document.getElementById('prof-name-input').value || '').trim();
+  const roll = (document.getElementById('prof-roll-input').value || '').trim();
+  if (!name || !roll) {
+    alert('Please enter your full name and mobile or roll number.');
+    return;
+  }
+  studentName = name;
+  rollNumber = roll;
+  localStorage.setItem('PW_STUDENT_NAME', name);
+  localStorage.setItem('PW_STUDENT_ROLL', roll);
+  closeProfileModal();
+  updateProfileDisplay();
+}
 
 function updateServerHostDisplay() {
   const label = document.getElementById('server-host-label');
@@ -39,8 +86,8 @@ function updateServerHostDisplay() {
 }
 
 function promptServerHost() {
-  const current = window.getApiHost ? window.getApiHost() : 'http://10.59.3.209:3001';
-  const next = prompt('Enter Laptop Server IP & Port (e.g. http://10.59.3.209:3001):', current);
+  const current = window.getApiHost ? window.getApiHost() : 'https://pw-exam-shield.vercel.app';
+  const next = prompt('Cloud Server URL:', current);
   if (next && next.trim()) {
     localStorage.setItem('PW_SERVER_HOST', next.trim());
     window.location.reload();
@@ -54,7 +101,9 @@ function setupWatermark() {
   const layer = document.getElementById('watermark-layer');
   if (!layer) return;
   layer.innerHTML = '';
-  const text = `${studentName.toUpperCase()} • ${rollNumber} • FLAG_SECURE ACTIVE • PW EXAM SHIELD`;
+  const displayName = (studentName || 'CANDIDATE').toUpperCase();
+  const displayRoll = rollNumber || 'VERIFIED';
+  const text = `${displayName} • ${displayRoll} • FLAG_SECURE ACTIVE • PW EXAM SHIELD`;
   for (let i = 0; i < 7; i++) {
     const row = document.createElement('div');
     row.className = 'm-watermark-row';

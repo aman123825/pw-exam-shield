@@ -296,13 +296,17 @@ function getLocalIp() {
 
 const localIp = getLocalIp();
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('========================================================================');
-  console.log('  PW Exam Shield - Native Mobile CBT Examination Suite Server');
-  console.log('========================================================================');
-  console.log(`[LOCAL PC TEST]    http://localhost:${PORT}`);
-  console.log(`[MOBILE PHONE LAN] http://${localIp}:${PORT}`);
-  console.log('------------------------------------------------------------------------');
-  console.log('Open the URL above on your Android or iPhone browser to practice tests!');
-  console.log('========================================================================');
-});
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log('========================================================================');
+    console.log('  PW Exam Shield - Native Mobile CBT Examination Suite Server');
+    console.log('========================================================================');
+    console.log(`[LOCAL PC TEST]    http://localhost:${PORT}`);
+    console.log(`[MOBILE PHONE LAN] http://${localIp}:${PORT}`);
+    console.log('------------------------------------------------------------------------');
+    console.log('Open the URL above on your Android or iPhone browser to practice tests!');
+    console.log('========================================================================');
+  });
+}
+
+module.exports = app;

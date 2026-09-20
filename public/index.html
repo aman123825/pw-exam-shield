@@ -67,23 +67,26 @@
         </div>
       </div>
 
-      <!-- Server Connection Indicator & Quick Config -->
+      <!-- Cloud Network & Security Status Bar -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 11px;">
         <div id="server-status-pill" onclick="promptServerHost()" style="cursor: pointer; background: #0f172a; border: 1px solid #1e3a8a; padding: 4px 10px; border-radius: 6px; color: #93c5fd; display: flex; align-items: center; gap: 6px;">
           <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
-          <span id="server-host-label">Server: 10.59.3.209:3001</span>
-          <span style="font-size: 11px; opacity: 0.7;">✏️</span>
+          <span id="server-host-label">PW Cloud Connected</span>
+          <span style="font-size: 10px; opacity: 0.6;">⚙️</span>
         </div>
         <div style="color: #64748b; font-size: 10px; font-family: monospace;">
-          MODE: LIVE STREAM / DRM
+          NTA CBT LOCKDOWN
         </div>
       </div>
 
       <!-- Candidate Profile Pill & Security Badge -->
-      <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+      <div onclick="openProfileModal()" style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
         <div>
-          <div style="font-size: 13px; font-weight: bold; color: #ffffff;" id="portal-student-name">Arjun Verma</div>
-          <div style="font-size: 11px; color: #94a3b8;" id="portal-student-roll">Roll: ROLL-2025-01 • Batch: PWJEE1</div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 13px; font-weight: bold; color: #ffffff;" id="portal-student-name">Student</span>
+            <span style="font-size: 10px; color: #38bdf8; background: #0c4a6e; padding: 1px 5px; border-radius: 4px;">✏️ Edit</span>
+          </div>
+          <div style="font-size: 11px; color: #94a3b8;" id="portal-student-roll">Roll: Loading... • Batch: ALL</div>
         </div>
         <div class="mobile-shield-pill">
           FLAG_SECURE ACTIVE
@@ -401,6 +404,40 @@
       <button onclick="returnToHub()" style="background: #f29306; color: #0f172a; width: 100%; padding: 12px; font-size: 13px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">
         &larr; Return to Practice Tests Hub
       </button>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: CANDIDATE PROFILE / LOGIN ONBOARDING                       -->
+  <!-- ================================================================= -->
+  <div id="profile-modal" class="palette-bottom-sheet" style="display: none; align-items: center; justify-content: center; padding: 16px; z-index: 9999;">
+    <div style="background: #ffffff; color: #1e293b; border-radius: 16px; padding: 22px; max-width: 390px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+        <span class="mobile-logo-badge" style="font-size: 14px; padding: 4px 8px;">PW</span>
+        <div>
+          <div style="font-size: 16px; font-weight: bold; color: #1e293b;">Candidate Profile</div>
+          <div style="font-size: 11px; color: #64748b;">Physics Wallah CBT Test Series</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 4px;">STUDENT FULL NAME</label>
+        <input type="text" id="prof-name-input" placeholder="e.g. Vivek Sharma" style="width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; font-size: 13px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 4px;">MOBILE / ROLL NUMBER</label>
+        <input type="text" id="prof-roll-input" placeholder="e.g. 9876543210" style="width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; font-size: 13px;">
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button onclick="closeProfileModal()" style="flex: 1; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">
+          Cancel
+        </button>
+        <button onclick="saveCandidateProfile()" style="flex: 1.5; background: #3b82f6; color: #ffffff; border: none; padding: 10px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">
+          Save Profile &rarr;
+        </button>
+      </div>
     </div>
   </div>
 

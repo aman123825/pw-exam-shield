@@ -16,15 +16,17 @@ const MASTER_DRM_SECRET = 'PW_SHIELD_SECURE_EXAM_VAULT_KEY_2025_#99';
 const DB_NAME = 'PW_SecureVault_PrivateSandbox';
 const STORE_NAME = 'encrypted_packages';
 
+const PRODUCTION_SERVER_URL = 'https://pw-exam-shield.vercel.app';
+
 // -------------------------------------------------------------------
-// 0. SERVER API HOST CONFIGURATION (CONNECTS PHONE TO LAPTOP SERVER)
+// 0. SERVER API HOST CONFIGURATION (CONNECTS PHONE TO 24/7 PRODUCTION CLOUD)
 // -------------------------------------------------------------------
 window.getApiHost = function() {
   if (window.location.protocol.startsWith('http')) {
     return window.location.origin;
   }
   const saved = localStorage.getItem('PW_SERVER_HOST');
-  return saved || 'http://10.59.3.209:3001';
+  return saved || PRODUCTION_SERVER_URL;
 };
 
 window.apiUrl = function(path) {
