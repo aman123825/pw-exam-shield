@@ -68,6 +68,10 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
         settings.setSupportZoom(false);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+
+        // Clear existing webview cache
+        webView.clearCache(true);
 
         // Expose Native Android Vault Interface to JavaScript
         webView.addJavascriptInterface(new NativeOfflineVaultBridge(this, offlineVaultDir), "AndroidOfflineVault");

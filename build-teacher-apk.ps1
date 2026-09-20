@@ -59,18 +59,7 @@ Write-Host "[5/6] Zip-Aligning APK..." -ForegroundColor Yellow
 if ($LASTEXITCODE -ne 0) { throw "Zipalign failed" }
 
 Write-Host "[6/6] Signing APK..." -ForegroundColor Yellow
-$keystorePath = "$baseDir\build\debug.keystore"
-if (-not (Test-Path $keystorePath)) {
-    $keystorePath = "$buildDir\debug.keystore"
-    & keytool.exe -genkeypair -validity 10000 `
-        -dname "CN=PWTeacherStudio,O=PhysicsWallah,C=IN" `
-        -keystore $keystorePath `
-        -storepass android `
-        -keypass android `
-        -alias pwshield `
-        -keyalg RSA `
-        -keysize 2048
-}
+$keystorePath = "$baseDir\keystore\pw-release.keystore"
 
 $outputApk = "$baseDir\PW-Teacher-Studio.apk"
 & $apksigner sign --ks $keystorePath --ks-pass pass:android --ks-key-alias pwshield --out $outputApk "$buildDir\app-aligned.apk"

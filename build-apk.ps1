@@ -68,8 +68,9 @@ Write-Host "[5/6] Zip-Aligning APK (4-byte boundary optimization)..." -Foregroun
 if ($LASTEXITCODE -ne 0) { throw "Zipalign failed" }
 
 Write-Host "[6/6] Cryptographically Signing APK with APK Signature Scheme v2/v3..." -ForegroundColor Yellow
-$keystorePath = "$buildDir\debug.keystore"
+$keystorePath = "$baseDir\keystore\pw-release.keystore"
 if (-not (Test-Path $keystorePath)) {
+    if (-not (Test-Path "$baseDir\keystore")) { New-Item -ItemType Directory -Path "$baseDir\keystore" | Out-Null }
     & keytool.exe -genkeypair -validity 10000 `
         -dname "CN=PWExamShield,O=PhysicsWallah,C=IN" `
         -keystore $keystorePath `
