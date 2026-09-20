@@ -26,10 +26,9 @@ Write-Host "[1/6] Compiling Teacher Android Resources with AAPT2..." -Foreground
 & $aapt2 compile --dir "$baseDir\android-teacher\res" -o "$buildDir\resources.zip"
 if ($LASTEXITCODE -ne 0) { throw "AAPT2 compile failed" }
 
-Write-Host "[2/6] Linking Android Package & Bundling Web Assets..." -ForegroundColor Yellow
+Write-Host "[2/6] Linking Teacher Android Package Manifest & Resources with AAPT2..." -ForegroundColor Yellow
 & $aapt2 link -I $androidJar `
     --manifest "$baseDir\android-teacher\AndroidManifest.xml" `
-    -A "$baseDir\public" `
     -o "$buildDir\app-unsigned.apk" `
     --java "$buildDir\gen" `
     --auto-add-overlay `
@@ -50,9 +49,9 @@ $classFiles = (Get-ChildItem -Path "$buildDir\classes" -Filter "*.class" -Recurs
 & $d8 --lib $androidJar --output "$buildDir\dex" $classFiles
 if ($LASTEXITCODE -ne 0) { throw "D8 dex compilation failed" }
 
-# Add classes.dex into app-unsigned.apk
-& jar.exe uf "$buildDir\app-unsigned.apk" -C "$buildDir\dex" classes.dex
-if ($LASTEXITCODE -ne 0) { throw "Failed to package classes.dex into APK" }
+Write-Host "[4.5/6] Injecting Web Assets (Strict POSIX / Paths) & classes.dex..." -ForegroundColor Yellow
+& python "$baseDir\scripts\package-assets.py" "$buildDir\app-unsigned.apk" "$baseDir\public" "$buildDir\dex\classes.dex"
+if ($LASTEXITCODE -ne 0) { throw "Failed to package assets into APK" }
 
 Write-Host "[5/6] Zip-Aligning APK..." -ForegroundColor Yellow
 & $zipalign -f -p 4 "$buildDir\app-unsigned.apk" "$buildDir\app-aligned.apk"
